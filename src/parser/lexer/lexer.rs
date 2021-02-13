@@ -20,7 +20,7 @@ impl Lexer {
         }
     }
 
-    fn read_char(&mut self) -> u8 {
+    pub fn read_char(&mut self) -> u8 {
         if self.read_position > self.input.len() {
             // TODO is this ok?
             self.ch = 0;
