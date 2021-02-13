@@ -1,4 +1,3 @@
-use std::str::CharIndices;
 #[path = "../tokenizer/mod.rs"]
 mod tokenizer;
 
@@ -7,28 +6,26 @@ pub struct Lexer {
     input: String,
     position: usize,
     read_position: usize,
-    ch: char,
+    ch: u8,
 }
 
 impl Lexer {
-    pub fn new(input: String) -> Self {
-        let mut chars = input.char_indices();
-        let (_, ch) = chars.nth(0).unwrap();
+    pub fn new(input: &String) -> Self {
+        let bytes = &input.as_bytes();
         Lexer {
-            input: input,
+            input: input.to_string(),
             position: 0,
             read_position: 1,
-            ch,
+            ch: bytes[0],
         }
     }
 
-    fn read_char(&mut self) -> char {
+    fn read_char(&mut self) -> u8 {
         if self.read_position > self.input.len() {
             // TODO is this ok?
-            self.ch = '0';
+            self.ch = 0;
         } else {
-            let (_, ch) = self.input.char_indices().nth(self.read_position).unwrap();
-            self.ch = ch;
+            self.ch = self.input.as_bytes()[self.read_position];
         }
 
         self.position = self.read_position;
@@ -43,9 +40,9 @@ mod tests {
     use super::*;
     #[test]
     fn read_char_works() {
-        let src = String::from("asdf");
-        let mut lexer = Lexer::new(src);
-        assert_eq!(lexer.ch, 'a');
-        assert_eq!(lexer.read_char(), 's');
+        let src: String = String::from("asdf");
+        let mut lexer = Lexer::new(&src);
+        assert_eq!(lexer.ch, 'a' as u8);
+        assert_eq!(lexer.read_char(), 's' as u8);
     }
 }
