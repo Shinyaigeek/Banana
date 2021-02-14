@@ -1,6 +1,3 @@
-#[path = "../tokenizer/mod.rs"]
-mod tokenizer;
-
 // TODO is This struct field is good?
 pub struct Lexer {
     input: String,
@@ -15,8 +12,8 @@ impl Lexer {
         Lexer {
             input: input.to_string(),
             position: 0,
-            read_position: 1,
-            ch: bytes[0],
+            read_position: 0,
+            ch: 0,
         }
     }
 
@@ -42,7 +39,7 @@ mod tests {
     fn read_char_works() {
         let src: String = String::from("asdf");
         let mut lexer = Lexer::new(&src);
-        assert_eq!(lexer.ch, 'a' as u8);
+        assert_eq!(lexer.read_char(), 'a' as u8);
         assert_eq!(lexer.read_char(), 's' as u8);
     }
 }
