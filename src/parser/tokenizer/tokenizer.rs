@@ -10,6 +10,7 @@ pub const RPAREN: u8 = b')';
 pub const LBRACE: u8 = b'{';
 pub const RBRACE: u8 = b'}';
 
+#[derive(Debug, PartialEq)]
 pub enum Token {
     EOF,
     ASSIGN,
@@ -19,29 +20,57 @@ pub enum Token {
     LPAREN,
     RPAREN,
     LBRACE,
-    RBRACE
+    RBRACE,
 }
 
-pub fn tokenize(char: u8) -> u8 {
-    let token = match char {
-        ASSIGN => ASSIGN,
-        PLUS => PLUS,
-        COMMA => COMMA,
-        SEMICOLON => SEMICOLON,
-        LPAREN => LPAREN,
-        RPAREN => RPAREN,
-        LBRACE => LBRACE,
-        RBRACE => RBRACE,
-        _ => {
-            EOF
-        }
-    };
-
-    token
-}
-
+#[derive(Debug)]
 pub struct Tokens {
-    
+    // TODO is this ok?
+    tokens: Vec<Token>,
+    lexer: Lexer,
+}
+
+impl Tokens {
+    pub fn new(lexer: Lexer) -> Self {
+        let mut token = Tokens {
+            tokens: Vec::new(),
+            lexer,
+        };
+
+        token.tokenize();
+
+        token
+    }
+
+    fn tokenize(&mut self) {
+        loop {
+            let ch = self.lexer.read_char();
+            let token = Tokens::tokenize_char(ch);
+
+            if token == Token::EOF {
+                self.tokens.push(Token::EOF);
+                break;
+            } else {
+                self.tokens.push(token);
+            }
+        }
+    }
+
+    fn tokenize_char(char: u8) -> Token {
+        let token = match char {
+            ASSIGN => Token::ASSIGN,
+            PLUS => Token::PLUS,
+            COMMA => Token::COMMA,
+            SEMICOLON => Token::SEMICOLON,
+            LPAREN => Token::LPAREN,
+            RPAREN => Token::RPAREN,
+            LBRACE => Token::LBRACE,
+            RBRACE => Token::RBRACE,
+            _ => Token::EOF,
+        };
+
+        token
+    }
 }
 
 #[cfg(test)]
@@ -49,10 +78,20 @@ mod tests {
     use super::*;
     #[test]
     fn tokenize_works() {
-
         let mut lexer = Lexer::new(&String::from("(){}+"));
 
-        assert_eq!(tokenize(lexer.read_char()), LPAREN);
+        let tokens = Tokens::new(lexer);
+
+        assert_eq!(
+            tokens.tokens,
+            vec![
+                Token::LPAREN,
+                Token::RPAREN,
+                Token::LBRACE,
+                Token::RBRACE,
+                Token::PLUS,
+                Token::EOF
+            ]
+        );
     }
 }
-

@@ -1,4 +1,5 @@
 // TODO is This struct field is good?
+#[derive(Debug)]
 pub struct Lexer {
     input: String,
     position: usize,
@@ -18,7 +19,7 @@ impl Lexer {
     }
 
     pub fn read_char(&mut self) -> u8 {
-        if self.read_position > self.input.len() {
+        if self.read_position >= self.input.len() {
             // TODO is this ok?
             self.ch = 0;
         } else {
