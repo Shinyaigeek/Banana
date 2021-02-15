@@ -10,8 +10,13 @@ pub const RPAREN: u8 = b')';
 pub const LBRACE: u8 = b'{';
 pub const RBRACE: u8 = b'}';
 
+pub const LET: &str = "LET";
+pub const FUNCTION: &str = "fn";
+
+pub const ILLEGAL: &str = "ILLEGAL";
+
 #[derive(Debug, PartialEq)]
-pub enum Token {
+pub enum TokenType {
     EOF,
     ASSIGN,
     PLUS,
@@ -21,6 +26,24 @@ pub enum Token {
     RPAREN,
     LBRACE,
     RBRACE,
+    LET,
+    FUNCTION,
+    ILLEGAL,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Token {
+    token_type: TokenType,
+    value: String,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, bytes: Vec<u8>) -> Self {
+        Token {
+            token_type,
+            value: String::from_utf8(bytes).unwrap(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -45,31 +68,29 @@ impl Tokens {
     fn tokenize(&mut self) {
         loop {
             let ch = self.lexer.read_char();
-            let token = Tokens::tokenize_char(ch);
 
-            if token == Token::EOF {
-                self.tokens.push(Token::EOF);
+            let chs: Vec<u8> = vec![ch];
+
+            let token = match ch {
+                ASSIGN => Token::new(TokenType::ASSIGN, chs),
+                PLUS => Token::new(TokenType::PLUS, chs),
+                COMMA => Token::new(TokenType::COMMA, chs),
+                SEMICOLON => Token::new(TokenType::SEMICOLON, chs),
+                LPAREN => Token::new(TokenType::LPAREN, chs),
+                RPAREN => Token::new(TokenType::RPAREN, chs),
+                LBRACE => Token::new(TokenType::LBRACE, chs),
+                RBRACE => Token::new(TokenType::RBRACE, chs),
+                0 => Token::new(TokenType::EOF, chs),
+                _ => Token::new(TokenType::ILLEGAL, chs),
+            };
+
+            if token.token_type == TokenType::EOF {
+                self.tokens.push(Token::new(TokenType::EOF, vec![ch]));
                 break;
             } else {
                 self.tokens.push(token);
             }
         }
-    }
-
-    fn tokenize_char(char: u8) -> Token {
-        let token = match char {
-            ASSIGN => Token::ASSIGN,
-            PLUS => Token::PLUS,
-            COMMA => Token::COMMA,
-            SEMICOLON => Token::SEMICOLON,
-            LPAREN => Token::LPAREN,
-            RPAREN => Token::RPAREN,
-            LBRACE => Token::LBRACE,
-            RBRACE => Token::RBRACE,
-            _ => Token::EOF,
-        };
-
-        token
     }
 }
 
@@ -85,12 +106,12 @@ mod tests {
         assert_eq!(
             tokens.tokens,
             vec![
-                Token::LPAREN,
-                Token::RPAREN,
-                Token::LBRACE,
-                Token::RBRACE,
-                Token::PLUS,
-                Token::EOF
+                Token::new(TokenType::LPAREN, vec![b'(']),
+                Token::new(TokenType::RPAREN, vec![b')']),
+                Token::new(TokenType::LBRACE, vec![b'{']),
+                Token::new(TokenType::RBRACE, vec![b'}']),
+                Token::new(TokenType::PLUS, vec![b'+']),
+                Token::new(TokenType::EOF, vec![0]),
             ]
         );
     }
