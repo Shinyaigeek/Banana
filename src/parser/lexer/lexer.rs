@@ -33,11 +33,26 @@ impl Lexer {
     }
 
     pub fn peek(&self) -> u8 {
+        if self.input.as_bytes().len() <= self.read_position {
+            return 0;
+        }
+
         self.input.as_bytes()[self.read_position]
     }
 
     pub fn read_identifier(&mut self) -> Vec<u8> {
-        vec![1]
+        let mut identifier: Vec<u8> = Vec::new();
+        loop {
+            let next_ch = self.peek();
+            if Lexer::is_identifier_end(next_ch) {
+                break;
+            }
+
+            let next_ch = self.read_char();
+            identifier.push(next_ch);
+        }
+
+        identifier
     }
 
     pub fn is_letter(ch: u8) -> bool {
@@ -45,7 +60,19 @@ impl Lexer {
     }
 
     pub fn is_identifier_end(ch: u8) -> bool {
-        ch == b' ' || ch == b'\t' || ch == b'\n' || ch == b'\r' || ch == b';'
+        ch == b' ' || ch == b'\t' || ch == b'\n' || ch == b'\r' || ch == b';' || ch == 0
+    }
+
+    pub fn eat_white_space(&mut self) {
+        let mut identifier: Vec<u8> = Vec::new();
+        loop {
+            let next_ch = self.peek();
+            if !Lexer::is_identifier_end(next_ch) {
+                break;
+            }
+
+            let next_ch = self.read_char();
+        }
     }
 }
 
@@ -82,5 +109,14 @@ mod tests {
         assert!(!Lexer::is_identifier_end(b'5'));
         assert!(Lexer::is_identifier_end(b' '));
         assert!(!Lexer::is_identifier_end(b'['));
+    }
+
+    #[test]
+    fn read_identifier_works() {
+        let src: String = String::from("asdf hoge2");
+        let mut lexer = Lexer::new(&src);
+        assert_eq!(lexer.read_identifier(), vec![b'a', b's', b'd', b'f']);
+        lexer.eat_white_space();
+        assert_eq!(lexer.read_identifier(), vec![b'h', b'o', b'g', b'e', b'2']);
     }
 }
