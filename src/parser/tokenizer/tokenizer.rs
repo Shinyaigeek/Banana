@@ -78,21 +78,19 @@ impl Tokens {
 
     fn tokenize(&mut self) {
         loop {
-            let ch = self.lexer.read_char();
-
-            let chs: Vec<u8> = vec![ch];
+            let ch = self.lexer.peek();
 
             let token = match ch {
-                ASSIGN => Token::new(TokenType::ASSIGN, chs),
-                PLUS => Token::new(TokenType::PLUS, chs),
-                COMMA => Token::new(TokenType::COMMA, chs),
-                SEMICOLON => Token::new(TokenType::SEMICOLON, chs),
-                LPAREN => Token::new(TokenType::LPAREN, chs),
-                RPAREN => Token::new(TokenType::RPAREN, chs),
-                LBRACE => Token::new(TokenType::LBRACE, chs),
-                RBRACE => Token::new(TokenType::RBRACE, chs),
-                0 => Token::new(TokenType::EOF, chs),
-                _ => Token::new(TokenType::ILLEGAL, chs),
+                ASSIGN => Token::new(TokenType::ASSIGN, vec![self.lexer.read_char()]),
+                PLUS => Token::new(TokenType::PLUS, vec![self.lexer.read_char()]),
+                COMMA => Token::new(TokenType::COMMA, vec![self.lexer.read_char()]),
+                SEMICOLON => Token::new(TokenType::SEMICOLON, vec![self.lexer.read_char()]),
+                LPAREN => Token::new(TokenType::LPAREN, vec![self.lexer.read_char()]),
+                RPAREN => Token::new(TokenType::RPAREN, vec![self.lexer.read_char()]),
+                LBRACE => Token::new(TokenType::LBRACE, vec![self.lexer.read_char()]),
+                RBRACE => Token::new(TokenType::RBRACE, vec![self.lexer.read_char()]),
+                0 => Token::new(TokenType::EOF, vec![self.lexer.read_char()]),
+                _ => Token::new(TokenType::ILLEGAL, vec![self.lexer.read_char()]),
             };
 
             if token.token_type == TokenType::EOF {
