@@ -44,7 +44,22 @@ impl Lexer {
         let mut identifier: Vec<u8> = Vec::new();
         loop {
             let next_ch = self.peek();
-            if Lexer::is_identifier_end(next_ch) {
+            if !Lexer::is_letter(next_ch) {
+                break;
+            }
+
+            let next_ch = self.read_char();
+            identifier.push(next_ch);
+        }
+
+        identifier
+    }
+
+    pub fn read_number(&mut self) -> Vec<u8> {
+        let mut identifier: Vec<u8> = Vec::new();
+        loop {
+            let next_ch = self.peek();
+            if !Lexer::is_digit(next_ch) {
                 break;
             }
 
@@ -60,13 +75,22 @@ impl Lexer {
     }
 
     pub fn is_identifier_end(ch: u8) -> bool {
-        ch == b' ' || ch == b'\t' || ch == b'\n' || ch == b'\r' || ch == b';' || ch == 0
+        ch == b' ' || ch == b'\t' || ch == b'\n' || ch == b'\r' || ch == 0
+    }
+
+    pub fn is_digit(ch: u8) -> bool {
+        b'0' <= ch && ch <= b'9'
     }
 
     pub fn eat_white_space(&mut self) {
         loop {
             let next_ch = self.peek();
             if !Lexer::is_identifier_end(next_ch) {
+                break;
+            }
+
+            // EOF
+            if next_ch == 0 {
                 break;
             }
 
@@ -100,6 +124,15 @@ mod tests {
         assert!(!Lexer::is_letter(b'5'));
         assert!(!Lexer::is_letter(b' '));
         assert!(!Lexer::is_letter(b'['));
+        assert!(!Lexer::is_letter(b'('));
+    }
+
+    #[test]
+    fn is_digit_works() {
+        assert!(!Lexer::is_digit(b'c'));
+        assert!(Lexer::is_digit(b'5'));
+        assert!(!Lexer::is_digit(b' '));
+        assert!(!Lexer::is_digit(b'['));
     }
 
     #[test]
@@ -116,6 +149,6 @@ mod tests {
         let mut lexer = Lexer::new(&src);
         assert_eq!(lexer.read_identifier(), vec![b'a', b's', b'd', b'f']);
         lexer.eat_white_space();
-        // assert_eq!(lexer.read_identifier(), vec![b'h', b'o', b'g', b'e', b'2']);
+        assert_eq!(lexer.read_identifier(), vec![b'h', b'o', b'g', b'e']);
     }
 }

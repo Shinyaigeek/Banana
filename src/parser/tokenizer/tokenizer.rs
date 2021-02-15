@@ -10,7 +10,7 @@ pub const RPAREN: u8 = b')';
 pub const LBRACE: u8 = b'{';
 pub const RBRACE: u8 = b'}';
 
-pub const LET: &str = "LET";
+pub const LET: &str = "let";
 pub const FUNCTION: &str = "fn";
 pub const IDENTIFIER: &str = "IDENTIFIER";
 pub const INT: &str = "INT";
@@ -80,6 +80,8 @@ impl Tokens {
         loop {
             let ch = self.lexer.peek();
 
+            println!("ch: {}", ch);
+
             let token = match ch {
                 ASSIGN => Token::new(TokenType::ASSIGN, vec![self.lexer.read_char()]),
                 PLUS => Token::new(TokenType::PLUS, vec![self.lexer.read_char()]),
@@ -90,8 +92,33 @@ impl Tokens {
                 LBRACE => Token::new(TokenType::LBRACE, vec![self.lexer.read_char()]),
                 RBRACE => Token::new(TokenType::RBRACE, vec![self.lexer.read_char()]),
                 0 => Token::new(TokenType::EOF, vec![self.lexer.read_char()]),
-                _ => Token::new(TokenType::ILLEGAL, vec![self.lexer.read_char()]),
+                _ => {
+                    if Lexer::is_letter(ch) {
+                        // TODO :thinking_face:
+                        let identifier = self.lexer.read_identifier();
+                        let identifier = String::from_utf8(identifier).unwrap();
+                        let identifier: &str = &identifier;
+                        let token = match identifier {
+                            LET => Token::new(TokenType::LET, identifier.as_bytes().to_vec()),
+                            FUNCTION => {
+                                Token::new(TokenType::FUNCTION, identifier.as_bytes().to_vec())
+                            }
+                            RETURN => Token::new(TokenType::RETURN, identifier.as_bytes().to_vec()),
+                            _ => Token::new(TokenType::IDENTIFIER, identifier.as_bytes().to_vec()),
+                        };
+
+                        token
+                    } else if Lexer::is_digit(ch) {
+                        let token = Token::new(TokenType::INT, self.lexer.read_number());
+
+                        token
+                    } else {
+                        Token::new(TokenType::ILLEGAL, vec![self.lexer.read_char()])
+                    }
+                }
             };
+
+            self.lexer.eat_white_space();
 
             if token.token_type == TokenType::EOF {
                 self.tokens.push(Token::new(TokenType::EOF, vec![ch]));
@@ -132,40 +159,44 @@ mod tests {
             return five + ten;
         }
         
-        add(five, ten",
+        add(five, ten)",
         ));
         let tokens = Tokens::new(lexer);
-        // assert_eq!(
-        //     tokens.tokens,
-        //     vec![
-        //         Token::__raw_new_(TokenType::LET, String::from("let")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
-        //         Token::__raw_new_(TokenType::INT, String::from("5")),
-        //         Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
-        //         Token::__raw_new_(TokenType::LET, String::from("let")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
-        //         Token::__raw_new_(TokenType::INT, String::from("10")),
-        //         Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
-        //         Token::__raw_new_(TokenType::FUNCTION, String::from("fn")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("add")),
-        //         Token::__raw_new_(TokenType::LPAREN, String::from("(")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("left")),
-        //         Token::__raw_new_(TokenType::COMMA, String::from(",")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("right")),
-        //         Token::__raw_new_(TokenType::RPAREN, String::from(")")),
-        //         Token::__raw_new_(TokenType::LBRACE, String::from("{")),
-        //         Token::__raw_new_(TokenType::RETURN, String::from("return")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
-        //         Token::__raw_new_(TokenType::PLUS, String::from("+")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
-        //         Token::__raw_new_(TokenType::RBRACE, String::from("}")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("add")),
-        //         Token::__raw_new_(TokenType::LPAREN, String::from("(")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("left")),
-        //         Token::__raw_new_(TokenType::COMMA, String::from(",")),
-        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("right")),
-        //         Token::__raw_new_(TokenType::RPAREN, String::from(")")),
-        //     ]
-        // )
+        assert_eq!(
+            tokens.tokens,
+            vec![
+                Token::__raw_new_(TokenType::LET, String::from("let")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+                Token::__raw_new_(TokenType::ASSIGN, String::from("=")),
+                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::LET, String::from("let")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
+                Token::__raw_new_(TokenType::ASSIGN, String::from("=")),
+                Token::__raw_new_(TokenType::INT, String::from("10")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::FUNCTION, String::from("fn")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("add")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("left")),
+                Token::__raw_new_(TokenType::COMMA, String::from(",")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("right")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+                Token::__raw_new_(TokenType::PLUS, String::from("+")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("add")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+                Token::__raw_new_(TokenType::COMMA, String::from(",")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::new(TokenType::EOF, vec![0]),
+            ]
+        )
     }
 }
