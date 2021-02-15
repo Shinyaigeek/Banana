@@ -61,6 +61,14 @@ mod tests {
     }
 
     #[test]
+    fn peek_works() {
+        let src: String = String::from("asdf");
+        let mut lexer = Lexer::new(&src);
+        assert_eq!(lexer.peek(), 'a' as u8);
+        assert_eq!(lexer.peek(), 'a' as u8);
+    }
+
+    #[test]
     fn is_letter_works() {
         assert!(Lexer::is_letter(b'c'));
         assert!(!Lexer::is_letter(b'5'));
