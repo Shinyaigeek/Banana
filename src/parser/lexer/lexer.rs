@@ -31,6 +31,22 @@ impl Lexer {
 
         self.ch
     }
+
+    pub fn peek(&self) -> u8 {
+        self.input.as_bytes()[self.read_position]
+    }
+
+    pub fn read_identifier(&mut self) -> Vec<u8> {
+        vec![1]
+    }
+
+    pub fn is_letter(ch: u8) -> bool {
+        (b'a' <= ch && ch <= b'z') || (b'A' <= ch && ch <= b'Z') || ch == b'_'
+    }
+
+    pub fn is_identifier_end(ch: u8) -> bool {
+        ch == b' ' || ch == b'\t' || ch == b'\n' || ch == b'\r' || ch == b';'
+    }
 }
 
 #[cfg(test)]
@@ -42,5 +58,21 @@ mod tests {
         let mut lexer = Lexer::new(&src);
         assert_eq!(lexer.read_char(), 'a' as u8);
         assert_eq!(lexer.read_char(), 's' as u8);
+    }
+
+    #[test]
+    fn is_letter_works() {
+        assert!(Lexer::is_letter(b'c'));
+        assert!(!Lexer::is_letter(b'5'));
+        assert!(!Lexer::is_letter(b' '));
+        assert!(!Lexer::is_letter(b'['));
+    }
+
+    #[test]
+    fn is_identifier_end_works() {
+        assert!(!Lexer::is_identifier_end(b'c'));
+        assert!(!Lexer::is_identifier_end(b'5'));
+        assert!(Lexer::is_identifier_end(b' '));
+        assert!(!Lexer::is_identifier_end(b'['));
     }
 }

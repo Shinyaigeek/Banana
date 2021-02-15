@@ -12,6 +12,9 @@ pub const RBRACE: u8 = b'}';
 
 pub const LET: &str = "LET";
 pub const FUNCTION: &str = "fn";
+pub const IDENTIFIER: &str = "IDENTIFIER";
+pub const INT: &str = "INT";
+pub const RETURN: &str = "return";
 
 pub const ILLEGAL: &str = "ILLEGAL";
 
@@ -28,6 +31,9 @@ pub enum TokenType {
     RBRACE,
     LET,
     FUNCTION,
+    IDENTIFIER,
+    INT,
+    RETURN,
     ILLEGAL,
 }
 
@@ -43,6 +49,11 @@ impl Token {
             token_type,
             value: String::from_utf8(bytes).unwrap(),
         }
+    }
+
+    // ! THIS IS A METHOD FOR TEST, DON'T USE THIS METHOD
+    pub fn __raw_new_(token_type: TokenType, value: String) -> Self {
+        Token { token_type, value }
     }
 }
 
@@ -114,5 +125,49 @@ mod tests {
                 Token::new(TokenType::EOF, vec![0]),
             ]
         );
+
+        let mut lexer = Lexer::new(&String::from(
+            "let five = 5;
+        let ten = 10;
+        
+        fn add(left, right) {
+            return five + ten;
+        }
+        
+        add(five, ten",
+        ));
+        let tokens = Tokens::new(lexer);
+        // assert_eq!(
+        //     tokens.tokens,
+        //     vec![
+        //         Token::__raw_new_(TokenType::LET, String::from("let")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+        //         Token::__raw_new_(TokenType::INT, String::from("5")),
+        //         Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+        //         Token::__raw_new_(TokenType::LET, String::from("let")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
+        //         Token::__raw_new_(TokenType::INT, String::from("10")),
+        //         Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+        //         Token::__raw_new_(TokenType::FUNCTION, String::from("fn")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("add")),
+        //         Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("left")),
+        //         Token::__raw_new_(TokenType::COMMA, String::from(",")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("right")),
+        //         Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+        //         Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+        //         Token::__raw_new_(TokenType::RETURN, String::from("return")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+        //         Token::__raw_new_(TokenType::PLUS, String::from("+")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
+        //         Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("add")),
+        //         Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("left")),
+        //         Token::__raw_new_(TokenType::COMMA, String::from(",")),
+        //         Token::__raw_new_(TokenType::IDENTIFIER, String::from("right")),
+        //         Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+        //     ]
+        // )
     }
 }
