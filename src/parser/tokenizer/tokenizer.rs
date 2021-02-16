@@ -315,6 +315,30 @@ mod tests {
                 Token::__raw_new_(TokenType::RBRACE, String::from("}")),
                 Token::new(TokenType::EOF, vec![0]),
             ]
+        );
+
+        let mut lexer = Lexer::new(&String::from(
+            "let mut three = [1, 3, 5]",
+        ));
+
+        let tokens = Tokens::new(lexer);
+
+        assert_eq!(
+            tokens.tokens,
+            vec![
+                Token::__raw_new_(TokenType::LET, String::from("let")),
+                Token::__raw_new_(TokenType::MUTATE, String::from("mut")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::ASSIGN, String::from("=")),
+                Token::__raw_new_(TokenType::LBRACKET, String::from("[")),
+                Token::__raw_new_(TokenType::INT, String::from("1")),
+                Token::__raw_new_(TokenType::COMMA, String::from(",")),
+                Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::COMMA, String::from(",")),
+                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::RBRACKET, String::from("]")),
+                Token::new(TokenType::EOF, vec![0]),
+            ]
         )
     }
 }
