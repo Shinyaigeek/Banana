@@ -66,6 +66,14 @@ pub enum TokenType {
     IDENTIFIER,
     INT,
     RETURN,
+    IF,
+    ELSE,
+    MUTATE,
+    EQUAL,
+    NOT_EQUAL,
+    GRATER_EQUAL,
+    LESS_EQUAL,
+    ARROW,
     ILLEGAL,
 }
 
@@ -112,10 +120,20 @@ impl Tokens {
         loop {
             let ch = self.lexer.peek();
 
-            println!("ch: {}", ch);
-
             let token = match ch {
-                ASSIGN => Token::new(TokenType::ASSIGN, vec![self.lexer.read_char()]),
+                ASSIGN => {
+                    let ch = self.lexer.read_char();
+                    let next_ch = self.lexer.peek();
+                    //* ==
+                    if next_ch == ASSIGN {
+                        Token::new(TokenType::EQUAL, vec![ch, self.lexer.read_char()])
+                        //* =>
+                    }else if next_ch == GRATER {
+                        Token::new(TokenType::ARROW, vec![ch, self.lexer.read_char()])
+                    }else{
+                        Token::new(TokenType::ASSIGN, vec![ch])
+                    }
+                },
                 PLUS => Token::new(TokenType::PLUS, vec![self.lexer.read_char()]),
                 MINUS => Token::new(TokenType::MINUS, vec![self.lexer.read_char()]),
                 ASTERISK => Token::new(TokenType::ASTERISK, vec![self.lexer.read_char()]),
@@ -146,7 +164,10 @@ impl Tokens {
                             LET => Token::new(TokenType::LET, identifier.as_bytes().to_vec()),
                             FUNCTION => {
                                 Token::new(TokenType::FUNCTION, identifier.as_bytes().to_vec())
-                            }
+                            },
+                            IF => Token::new(TokenType::IF, identifier.as_bytes().to_vec()),
+                            ELSE => Token::new(TokenType::ELSE, identifier.as_bytes().to_vec()),
+                            MUTATE => Token::new(TokenType::MUTATE, identifier.as_bytes().to_vec()),
                             RETURN => Token::new(TokenType::RETURN, identifier.as_bytes().to_vec()),
                             _ => Token::new(TokenType::IDENTIFIER, identifier.as_bytes().to_vec()),
                         };
@@ -251,6 +272,47 @@ mod tests {
                 Token::__raw_new_(TokenType::COMMA, String::from(",")),
                 Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
                 Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::new(TokenType::EOF, vec![0]),
+            ]
+        );
+
+        let mut lexer = Lexer::new(&String::from(
+            "let mut three = 3;
+            if(three == 3) {
+                return 3;
+            }else{
+                return 5;
+            }",
+        ));
+
+        let tokens = Tokens::new(lexer);
+
+        assert_eq!(
+            tokens.tokens,
+            vec![
+                Token::__raw_new_(TokenType::LET, String::from("let")),
+                Token::__raw_new_(TokenType::MUTATE, String::from("mut")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::ASSIGN, String::from("=")),
+                Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::IF, String::from("if")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::EQUAL, String::from("==")),
+                Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+                Token::__raw_new_(TokenType::ELSE, String::from("else")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
                 Token::new(TokenType::EOF, vec![0]),
             ]
         )
