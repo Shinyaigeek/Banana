@@ -148,8 +148,28 @@ impl Tokens {
                 RBRACE => Token::new(TokenType::RBRACE, vec![self.lexer.read_char()]),
                 LBRACKET => Token::new(TokenType::LBRACKET, vec![self.lexer.read_char()]),
                 RBRACKET => Token::new(TokenType::RBRACKET, vec![self.lexer.read_char()]),
-                LESS => Token::new(TokenType::LESS, vec![self.lexer.read_char()]),
-                GRATER => Token::new(TokenType::GRATER, vec![self.lexer.read_char()]),
+                LESS => {
+                    let ch = self.lexer.read_char();
+                    let next_ch = self.lexer.peek();
+                    //* <=
+                    if next_ch == ASSIGN {
+                        Token::new(TokenType::LESS_EQUAL, vec![ch, self.lexer.read_char()])
+                    }else{
+                        //* <
+                        Token::new(TokenType::LESS, vec![ch])
+                    }
+                },
+                GRATER => {
+                    let ch = self.lexer.read_char();
+                    let next_ch = self.lexer.peek();
+                    //* >=
+                    if next_ch == ASSIGN {
+                        Token::new(TokenType::GRATER_EQUAL, vec![ch, self.lexer.read_char()])
+                    }else{
+                        //* >
+                        Token::new(TokenType::GRATER, vec![ch])
+                    }
+                },
                 QUOTE => Token::new(TokenType::QUOTE, vec![self.lexer.read_char()]),
                 SQUOTE => Token::new(TokenType::SQUOTE, vec![self.lexer.read_char()]),
                 TQUOTE => Token::new(TokenType::TQUOTE, vec![self.lexer.read_char()]),
@@ -280,6 +300,14 @@ mod tests {
             "let mut three = 3;
             if(three == 3) {
                 return 3;
+            }else if(three > 5){
+                return 5;
+            }else if(three >= 5){
+                return 7;
+            }else if(three < 9){
+                return 9;
+            }else if(three <= 9){
+                return 9;
             }else{
                 return 5;
             }",
@@ -305,6 +333,54 @@ mod tests {
                 Token::__raw_new_(TokenType::LBRACE, String::from("{")),
                 Token::__raw_new_(TokenType::RETURN, String::from("return")),
                 Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+                Token::__raw_new_(TokenType::ELSE, String::from("else")),
+                Token::__raw_new_(TokenType::IF, String::from("if")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::GRATER, String::from(">")),
+                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+                Token::__raw_new_(TokenType::ELSE, String::from("else")),
+                Token::__raw_new_(TokenType::IF, String::from("if")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::GRATER_EQUAL, String::from(">=")),
+                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::INT, String::from("7")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+                Token::__raw_new_(TokenType::ELSE, String::from("else")),
+                Token::__raw_new_(TokenType::IF, String::from("if")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::LESS, String::from("<")),
+                Token::__raw_new_(TokenType::INT, String::from("9")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::INT, String::from("9")),
+                Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
+                Token::__raw_new_(TokenType::RBRACE, String::from("}")),
+                Token::__raw_new_(TokenType::ELSE, String::from("else")),
+                Token::__raw_new_(TokenType::IF, String::from("if")),
+                Token::__raw_new_(TokenType::LPAREN, String::from("(")),
+                Token::__raw_new_(TokenType::IDENTIFIER, String::from("three")),
+                Token::__raw_new_(TokenType::LESS_EQUAL, String::from("<=")),
+                Token::__raw_new_(TokenType::INT, String::from("9")),
+                Token::__raw_new_(TokenType::RPAREN, String::from(")")),
+                Token::__raw_new_(TokenType::LBRACE, String::from("{")),
+                Token::__raw_new_(TokenType::RETURN, String::from("return")),
+                Token::__raw_new_(TokenType::INT, String::from("9")),
                 Token::__raw_new_(TokenType::SEMICOLON, String::from(";")),
                 Token::__raw_new_(TokenType::RBRACE, String::from("}")),
                 Token::__raw_new_(TokenType::ELSE, String::from("else")),
