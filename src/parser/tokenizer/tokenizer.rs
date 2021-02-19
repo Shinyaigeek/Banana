@@ -108,6 +108,8 @@ pub struct Tokens {
     // TODO is this ok?
     tokens: Vec<Token>,
     lexer: Lexer,
+    read_position: usize,
+    position: usize,
 }
 
 impl Tokens {
@@ -115,11 +117,34 @@ impl Tokens {
         let mut token = Tokens {
             tokens: Vec::new(),
             lexer,
+            read_position: 0,
+            position: 0,
         };
 
         token.tokenize();
 
         token
+    }
+
+    pub fn read_token(&mut self) -> &Token {
+        if self.read_position >= self.tokens.len() {
+            // TODO is this ok?
+            panic!("there is no more token!!");
+        }
+
+        self.position = self.read_position;
+        self.read_position += 1;
+
+        self.tokens.get(self.position).unwrap()
+    }
+
+    pub fn peek_token(&self) -> &Token {
+        if self.read_position >= self.tokens.len() {
+            // TODO is this ok?
+            panic!("there is no more token!!");
+        }
+
+        self.tokens.get(self.read_position).unwrap()
     }
 
     fn tokenize(&mut self) {
@@ -134,12 +159,12 @@ impl Tokens {
                     if next_ch == ASSIGN {
                         Token::new(TokenType::EQUAL, vec![ch, self.lexer.read_char()])
                         //* =>
-                    }else if next_ch == GRATER {
+                    } else if next_ch == GRATER {
                         Token::new(TokenType::ARROW, vec![ch, self.lexer.read_char()])
-                    }else{
+                    } else {
                         Token::new(TokenType::ASSIGN, vec![ch])
                     }
-                },
+                }
                 EXCLAMATION => {
                     let ch = self.lexer.read_char();
                     let next_ch = self.lexer.peek();
@@ -147,10 +172,10 @@ impl Tokens {
                     if next_ch == ASSIGN {
                         Token::new(TokenType::NOT_EQUAL, vec![ch, self.lexer.read_char()])
                         //* !
-                    }else{
+                    } else {
                         Token::new(TokenType::EXCLAMATION, vec![ch])
                     }
-                },
+                }
                 PLUS => Token::new(TokenType::PLUS, vec![self.lexer.read_char()]),
                 MINUS => Token::new(TokenType::MINUS, vec![self.lexer.read_char()]),
                 ASTERISK => Token::new(TokenType::ASTERISK, vec![self.lexer.read_char()]),
@@ -171,22 +196,22 @@ impl Tokens {
                     //* <=
                     if next_ch == ASSIGN {
                         Token::new(TokenType::LESS_EQUAL, vec![ch, self.lexer.read_char()])
-                    }else{
+                    } else {
                         //* <
                         Token::new(TokenType::LESS, vec![ch])
                     }
-                },
+                }
                 GRATER => {
                     let ch = self.lexer.read_char();
                     let next_ch = self.lexer.peek();
                     //* >=
                     if next_ch == ASSIGN {
                         Token::new(TokenType::GRATER_EQUAL, vec![ch, self.lexer.read_char()])
-                    }else{
+                    } else {
                         //* >
                         Token::new(TokenType::GRATER, vec![ch])
                     }
-                },
+                }
                 QUOTE => Token::new(TokenType::QUOTE, vec![self.lexer.read_char()]),
                 SQUOTE => Token::new(TokenType::SQUOTE, vec![self.lexer.read_char()]),
                 TQUOTE => Token::new(TokenType::TQUOTE, vec![self.lexer.read_char()]),
@@ -201,7 +226,7 @@ impl Tokens {
                             LET => Token::new(TokenType::LET, identifier.as_bytes().to_vec()),
                             FUNCTION => {
                                 Token::new(TokenType::FUNCTION, identifier.as_bytes().to_vec())
-                            },
+                            }
                             IF => Token::new(TokenType::IF, identifier.as_bytes().to_vec()),
                             ELSE => Token::new(TokenType::ELSE, identifier.as_bytes().to_vec()),
                             TRUE => Token::new(TokenType::TRUE, identifier.as_bytes().to_vec()),
@@ -237,6 +262,40 @@ impl Tokens {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn read_token_works() {
+        let src = String::from("let five = 5;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+
+        assert_eq!(
+            *tokens.read_token(),
+            Token::__raw_new_(TokenType::LET, String::from("let"))
+        );
+
+        assert_eq!(
+            *tokens.read_token(),
+            Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
+        );
+    }
+
+    #[test]
+    fn peek_token_works() {
+        let src = String::from("let five = 5;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+
+        assert_eq!(
+            *tokens.read_token(),
+            Token::__raw_new_(TokenType::LET, String::from("let"))
+        );
+
+        assert_eq!(
+            *tokens.read_token(),
+            Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
+        );
+    }
     #[test]
     fn tokenize_works() {
         let mut lexer = Lexer::new(&String::from("(){}[]+-*/\"'`:;.,"));
@@ -412,9 +471,7 @@ mod tests {
             ]
         );
 
-        let mut lexer = Lexer::new(&String::from(
-            "let mut three = [1, 3, 5]",
-        ));
+        let mut lexer = Lexer::new(&String::from("let mut three = [1, 3, 5]"));
 
         let tokens = Tokens::new(lexer);
 
