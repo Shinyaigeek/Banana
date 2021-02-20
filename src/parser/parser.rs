@@ -38,7 +38,7 @@ pub struct Literal {
 #[derive(Debug, PartialEq)]
 pub struct Parser {
     tokens: Tokens,
-    program: Program,
+    pub program: Program,
 }
 
 impl Parser {
@@ -49,7 +49,7 @@ impl Parser {
         parser
     }
 
-    fn parse(&mut self) {
+    pub fn parse(&mut self) {
         loop {
             // TODO should fix
             let token = self.tokens.peek_token();
@@ -100,7 +100,7 @@ impl Parser {
         let declaration_token = self.tokens.read_token();
         // TODO 今の所ExpressionにはLiteral Intしか来ないようにしている
         if declaration_token.token_type == TokenType::LET {
-            let token = self.tokens.read_token();
+            let token = Token::copy_token(self.tokens.read_token());
             let is_mutate = if token.token_type == TokenType::MUTATE {
                 true
             } else {
@@ -108,19 +108,19 @@ impl Parser {
             };
 
             let identifier = if is_mutate {
-                self.tokens.read_token()
+                Token::copy_token(self.tokens.read_token())
             } else {
                 token
             };
 
-            if Parser::is_identifier(identifier) == false {
+            if Parser::is_identifier(&identifier) == false {
                 panic!("TokenType::IDENTIFIER should be next to let or let mut");
             }
 
-            let token = self.tokens.read_token();
+            let token = Token::copy_token(self.tokens.read_token());
 
             // TODO ! ?
-            if Parser::is_assign(token) == false {
+            if Parser::is_assign(&token) == false {
                 panic!("TokenType::ASSIGN should be next to let identifier or let mut identifier");
             }
 
@@ -129,21 +129,13 @@ impl Parser {
             if Parser::is_expression(initializer) {
                 if Parser::is_literal(initializer) {
                     let initializer = Literal {
-                        // TODO: should fix, this is just redunbund copy trait
-                        value: Token {
-                            token_type: TokenType::INT,
-                            value: initializer.value.clone(),
-                        },
+                        value: Token::copy_token(initializer),
                     };
                     let initializer = Expression::Literal(initializer);
                     let statement = VariableDeclaration {
                         // TODO support const
                         kind: String::from("let"),
-                        // TODO: is this ok?
-                        identifier: Token {
-                            token_type: TokenType::IDENTIFIER,
-                            value: identifier.value.clone(),
-                        },
+                        identifier: Token::copy_token(&identifier),
                         mutation: is_mutate,
                         init: initializer,
                     };
@@ -168,23 +160,37 @@ mod tests {
     fn parse_works() {
         //* variable declaration
         let mut lexer = Lexer::new(&String::from(
-            "let five = 5;",
+            "let five = 5;
+        let ten = 10;",
         ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
         parser.parse();
         let expected = Program {
-            body: vec![Statement {
-                statement: StatementType::VariableDeclaration(VariableDeclaration {
-                    kind: String::from("let"),
-                    identifier: Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
-                    mutation: false,
-                    init: Expression::Literal(Literal {
-                        value: Token::__raw_new_(TokenType::INT, String::from("5")),
+            body: vec![
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+                        mutation: false,
+                        init: Expression::Literal(Literal {
+                            value: Token::__raw_new_(TokenType::INT, String::from("5")),
+                        }),
                     }),
-                }),
-            }],
+                },
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Token::__raw_new_(TokenType::IDENTIFIER, String::from("ten")),
+                        mutation: false,
+                        init: Expression::Literal(Literal {
+                            value: Token::__raw_new_(TokenType::INT, String::from("10")),
+                        }),
+                    }),
+                },
+            ],
         };
+
         assert_eq!(parser.program, expected);
     }
 }

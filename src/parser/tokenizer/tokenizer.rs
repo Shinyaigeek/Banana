@@ -41,7 +41,7 @@ pub const ARROW: &str = "=>";
 
 pub const ILLEGAL: &str = "ILLEGAL";
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     EOF,
     ASSIGN,
@@ -83,7 +83,7 @@ pub enum TokenType {
     ILLEGAL,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub value: String,
@@ -100,6 +100,14 @@ impl Token {
     // ! THIS IS A METHOD FOR TEST, DON'T USE THIS METHOD
     pub fn __raw_new_(token_type: TokenType, value: String) -> Self {
         Token { token_type, value }
+    }
+
+    //TODO is this ok
+    pub fn copy_token(token: &Token) -> Token {
+        Token {
+            token_type: token.token_type.clone(),
+            value: token.value.clone(),
+        }
     }
 }
 
