@@ -1,5 +1,5 @@
 // TODO is This struct field is good?
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Lexer {
     input: String,
     position: usize,
