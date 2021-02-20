@@ -192,5 +192,28 @@ mod tests {
         };
 
         assert_eq!(parser.program, expected);
+
+        let mut lexer = Lexer::new(&String::from(
+            "let mut five = 5;",
+        ));
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let expected = Program {
+            body: vec![
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Token::__raw_new_(TokenType::IDENTIFIER, String::from("five")),
+                        mutation: true,
+                        init: Expression::Literal(Literal {
+                            value: Token::__raw_new_(TokenType::INT, String::from("5")),
+                        }),
+                    }),
+                }
+            ],
+        };
+
+        assert_eq!(parser.program, expected);
     }
 }
