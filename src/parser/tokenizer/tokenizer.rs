@@ -292,7 +292,7 @@ mod tests {
         );
 
         assert_eq!(
-            *tokens.read_token(),
+            *tokens.peek_token(),
             Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
         );
     }
