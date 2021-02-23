@@ -14,6 +14,7 @@ pub struct Statement {
 #[derive(Debug, PartialEq)]
 pub enum StatementType {
     VariableDeclaration(VariableDeclaration),
+    ReturnStatement(ReturnStatement),
 }
 
 #[derive(Debug, PartialEq)]
@@ -28,6 +29,11 @@ pub struct VariableDeclaration {
     identifier: Identifier,
     mutation: bool,
     init: Expression,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ReturnStatement {
+    arguments: Vec<Literal>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -69,6 +75,10 @@ impl Parser {
                 let statement = self.handle_variable_declaration();
                 let statement = Statement { statement };
                 self.program.body.push(statement)
+            } else if Parser::is_return_statement(token) {
+                let statement = self.handle_return_statement();
+                let statement = Statement { statement };
+                self.program.body.push(statement);
             }
 
             if self.tokens.peek_token().token_type == TokenType::SEMICOLON {
@@ -80,6 +90,10 @@ impl Parser {
             }
         }
         println!("parse execution done 🎉");
+    }
+
+    fn is_return_statement(token: &Token) -> bool {
+        token.token_type == TokenType::RETURN
     }
 
     fn is_variable_declaration(token: &Token) -> bool {
@@ -104,6 +118,36 @@ impl Parser {
 
     fn is_identifier(token: &Token) -> bool {
         token.token_type == TokenType::IDENTIFIER
+    }
+
+    fn handle_return_statement(&mut self) -> StatementType {
+        let return_token = self.tokens.read_token();
+        if return_token.token_type != TokenType::RETURN {
+            panic!("handle_return_statement can only handle return");
+        }
+
+        let mut arguments: Vec<Literal> = vec![];
+
+        loop {
+            let token = self.tokens.read_token();
+
+            if token.token_type == TokenType::SEMICOLON {
+                let statement = ReturnStatement { arguments };
+                return StatementType::ReturnStatement(statement);
+            } else if Parser::is_literal(&token) {
+                if Parser::is_number(&token) {
+                    let argument = Literal {
+                        value: token.value.clone(),
+                        literal_type: LiteralType::INT,
+                    };
+                    arguments.push(argument);
+                } else {
+                    panic!("literal is should be number")
+                }
+            } else {
+                panic!("return statement's argument should be literal");
+            }
+        }
     }
 
     fn handle_variable_declaration(&mut self) -> StatementType {
@@ -220,24 +264,37 @@ mod tests {
 
         assert_eq!(parser.program, expected);
 
-        let mut lexer = Lexer::new(&String::from("let mut five = 5;"));
+        let mut lexer = Lexer::new(&String::from(
+            "let mut five = 5;
+        return 5;",
+        ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
         parser.parse();
         let expected = Program {
-            body: vec![Statement {
-                statement: StatementType::VariableDeclaration(VariableDeclaration {
-                    kind: String::from("let"),
-                    identifier: Identifier {
-                        value: String::from("five"),
-                    },
-                    mutation: true,
-                    init: Expression::Literal(Literal {
-                        value: String::from("5"),
-                        literal_type: LiteralType::INT,
+            body: vec![
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Identifier {
+                            value: String::from("five"),
+                        },
+                        mutation: true,
+                        init: Expression::Literal(Literal {
+                            value: String::from("5"),
+                            literal_type: LiteralType::INT,
+                        }),
                     }),
-                }),
-            }],
+                },
+                Statement {
+                    statement: StatementType::ReturnStatement(ReturnStatement {
+                        arguments: vec![Literal {
+                            value: String::from("5"),
+                            literal_type: LiteralType::INT,
+                        }],
+                    }),
+                },
+            ],
         };
 
         assert_eq!(parser.program, expected);
