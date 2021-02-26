@@ -125,7 +125,7 @@ impl Tokens {
         let mut token = Tokens {
             tokens: Vec::new(),
             lexer,
-            read_position: 0,
+            read_position: 1,
             position: 0,
         };
 
@@ -288,12 +288,12 @@ mod tests {
 
         assert_eq!(
             *tokens.read_token(),
-            Token::__raw_new_(TokenType::LET, String::from("let"))
+            Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
         );
 
         assert_eq!(
             *tokens.read_token(),
-            Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
+            Token::__raw_new_(TokenType::ASSIGN, String::from("="))
         );
     }
 
@@ -305,12 +305,12 @@ mod tests {
 
         assert_eq!(
             *tokens.read_token(),
-            Token::__raw_new_(TokenType::LET, String::from("let"))
+            Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
         );
 
         assert_eq!(
             *tokens.peek_token(),
-            Token::__raw_new_(TokenType::IDENTIFIER, String::from("five"))
+            Token::__raw_new_(TokenType::ASSIGN, String::from("="))
         );
     }
     #[test]

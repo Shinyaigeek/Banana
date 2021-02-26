@@ -128,13 +128,17 @@ impl Parser {
     pub fn parse(&mut self) {
         loop {
             // TODO should fix
-            let token = self.tokens.peek_token();
+            let token = if Parser::is_semicolon(self.tokens.cur_token()) {
+                self.tokens.read_token()
+            } else {
+                self.tokens.cur_token()
+            };
 
             let statement = if Parser::is_variable_declaration(token) {
                 self.handle_variable_declaration()
             } else if Parser::is_return_statement(token) {
                 self.handle_return_statement()
-            } else if token.token_type == TokenType::EOF{
+            } else if token.token_type == TokenType::EOF {
                 break;
             } else {
                 self.handle_expression_statement()
@@ -303,7 +307,12 @@ impl Parser {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Expression {
-        let token = self.tokens.cur_token();
+        let token = if Parser::is_semicolon(self.tokens.cur_token()) {
+            self.tokens.read_token()
+        } else {
+            self.tokens.cur_token()
+        };
+
         let mut left_expression = if Parser::is_literal(&token) {
             Parser::parse_literal(&token)
         } else if Parser::is_identifier(&token) {
@@ -315,7 +324,7 @@ impl Parser {
         };
 
         while !Parser::is_semicolon(self.tokens.cur_token())
-            && Parser::is_left_precedencer(precedence, self.peek_precedence())
+            && !Parser::is_left_precedencer(precedence, self.peek_precedence())
         {
             let token = self.tokens.read_token();
 
@@ -352,6 +361,8 @@ impl Parser {
 
         let precedence = self.cur_precedence();
 
+        self.tokens.read_token();
+
         let expression = InfixExpression {
             operator,
             right: Box::new(self.parse_expression(precedence)),
@@ -368,7 +379,7 @@ impl Parser {
     }
 
     fn handle_return_statement(&mut self) -> StatementType {
-        let return_token = self.tokens.read_token();
+        let return_token = self.tokens.cur_token();
         if return_token.token_type != TokenType::RETURN {
             panic!("handle_return_statement can only handle return");
         }
@@ -399,7 +410,7 @@ impl Parser {
 
     fn handle_variable_declaration(&mut self) -> StatementType {
         // TODO should fix
-        let declaration_token = self.tokens.read_token();
+        let declaration_token = self.tokens.cur_token();
         // TODO 今の所ExpressionにはLiteral Intしか来ないようにしている
         if declaration_token.token_type == TokenType::LET {
             let token = self.tokens.read_token();
@@ -542,6 +553,44 @@ mod tests {
                     }),
                 },
             ],
+        };
+
+        assert_eq!(parser.program, expected);
+
+        let mut lexer = Lexer::new(&String::from("1 + 3 * 6 + 2;"));
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let expected = Program {
+            body: vec![Statement {
+                statement: StatementType::Expression(Expression::InfixExpression(
+                    InfixExpression {
+                        operator: InfixOperator::PLUS,
+                        right: Box::new(Expression::InfixExpression(InfixExpression {
+                            operator: InfixOperator::PLUS,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "2".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                            left: Box::new(Expression::InfixExpression(InfixExpression {
+                                operator: InfixOperator::ASTERISK,
+                                right: Box::new(Expression::Literal(Literal {
+                                    value: "6".to_string(),
+                                    literal_type: LiteralType::INT,
+                                })),
+                                left: Box::new(Expression::Literal(Literal {
+                                    value: "3".to_string(),
+                                    literal_type: LiteralType::INT,
+                                })),
+                            })),
+                        })),
+                        left: Box::new(Expression::Literal(Literal {
+                            value: "1".to_string(),
+                            literal_type: LiteralType::INT,
+                        })),
+                    },
+                )),
+            }],
         };
 
         assert_eq!(parser.program, expected);

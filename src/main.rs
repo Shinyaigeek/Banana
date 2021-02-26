@@ -4,9 +4,7 @@ use crate::parser::parser::Parser;
 use crate::parser::tokenizer::tokenizer::{Token, TokenType, Tokens};
 
 fn main() {
-    let src = "let five = 5;
-    let ten = 10;"
-        .to_string();
+    let src = "1 + 3 * 6 + 2;".to_string();
     let mut lexer = Lexer::new(&src);
     let mut tokens = Tokens::new(lexer);
     let mut parser = Parser::new(tokens);
