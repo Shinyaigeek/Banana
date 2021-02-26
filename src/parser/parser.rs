@@ -206,7 +206,7 @@ impl Parser {
     }
 
     fn is_prefix_operator(token: &Token) -> bool {
-        token.token_type == TokenType::EXCLAMATION
+        token.token_type == TokenType::EXCLAMATION || token.token_type == TokenType::MINUS
     }
 
     fn is_semicolon(token: &Token) -> bool {
@@ -347,6 +347,7 @@ impl Parser {
     fn parse_prefix_expression(&mut self) -> Expression {
         let token = self.tokens.cur_token();
         let operator = Parser::parse_prefix_operator(&token);
+        self.tokens.read_token();
         let expression = PrefixExpression {
             operator,
             right: Box::new(self.parse_expression(Precedence::PREFIX)),
@@ -587,6 +588,50 @@ mod tests {
                         left: Box::new(Expression::Literal(Literal {
                             value: "1".to_string(),
                             literal_type: LiteralType::INT,
+                        })),
+                    },
+                )),
+            }],
+        };
+
+        assert_eq!(parser.program, expected);
+
+        let mut lexer = Lexer::new(&String::from("-1 + 3 * -6 + 2;"));
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let expected = Program {
+            body: vec![Statement {
+                statement: StatementType::Expression(Expression::InfixExpression(
+                    InfixExpression {
+                        operator: InfixOperator::PLUS,
+                        right: Box::new(Expression::InfixExpression(InfixExpression {
+                            operator: InfixOperator::PLUS,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "2".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                            left: Box::new(Expression::InfixExpression(InfixExpression {
+                                operator: InfixOperator::ASTERISK,
+                                right: Box::new(Expression::PrefixExpression(PrefixExpression {
+                                    operator: PrefixOperator::MINUS,
+                                    right: Box::new(Expression::Literal(Literal {
+                                        value: "6".to_string(),
+                                        literal_type: LiteralType::INT,
+                                    })),
+                                })),
+                                left: Box::new(Expression::Literal(Literal {
+                                    value: "3".to_string(),
+                                    literal_type: LiteralType::INT,
+                                })),
+                            })),
+                        })),
+                        left: Box::new(Expression::PrefixExpression(PrefixExpression {
+                            operator: PrefixOperator::MINUS,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "1".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
                         })),
                     },
                 )),
