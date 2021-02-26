@@ -155,6 +155,15 @@ impl Tokens {
         self.tokens.get(self.read_position).unwrap()
     }
 
+    pub fn cur_token(&self) -> &Token {
+        if self.position >= self.tokens.len() {
+            // TODO is this ok?
+            panic!("there is no more token!!");
+        }
+
+        self.tokens.get(self.position).unwrap()
+    }
+
     fn tokenize(&mut self) {
         loop {
             let ch = self.lexer.peek();

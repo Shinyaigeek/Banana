@@ -1,5 +1,27 @@
 use crate::parser::lexer::lexer::Lexer;
-use crate::parser::tokenizer::tokenizer::{Token, TokenType, Tokens};
+use crate::parser::tokenizer::tokenizer::{
+    Token, TokenType, Tokens, ASTERISK, EQUAL, EXCLAMATION, GRATER, GRATER_EQUAL, LESS, LESS_EQUAL,
+    MINUS, NOT_EQUAL, PLUS, SLASH,
+};
+
+const LOWEST: u8 = 0;
+const EQUALS: u8 = 1; // ==
+const LESSGREATER: u8 = 2; // > or <
+const SUM: u8 = 3; // +
+const PRODUCT: u8 = 4; // *
+const PREFIX: u8 = 5; // !X or -X
+const CALL: u8 = 6; // function(x)
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum Precedence {
+    LOWEST,
+    EQUALS,
+    LESSGREATER,
+    SUM,
+    PRODUCT,
+    PREFIX,
+    CALL,
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
@@ -15,6 +37,7 @@ pub struct Statement {
 pub enum StatementType {
     VariableDeclaration(VariableDeclaration),
     ReturnStatement(ReturnStatement),
+    Expression(Expression),
 }
 
 #[derive(Debug, PartialEq)]
@@ -39,6 +62,42 @@ pub struct ReturnStatement {
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     Literal(Literal),
+    PrefixExpression(PrefixExpression),
+    InfixExpression(InfixExpression),
+    Identifier(Identifier),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PrefixExpression {
+    operator: PrefixOperator,
+    right: Box<Expression>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct InfixExpression {
+    operator: InfixOperator,
+    right: Box<Expression>,
+    left: Box<Expression>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PrefixOperator {
+    EXCLAMATION,
+    MINUS,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum InfixOperator {
+    PLUS,
+    MINUS,
+    ASTERISK,
+    SLASH,
+    GRATER,
+    GRATER_EQUAL,
+    LESS,
+    LESS_EQUAL,
+    EQUAL,
+    NOT_EQUAL,
 }
 
 #[derive(Debug, PartialEq)]
@@ -71,15 +130,18 @@ impl Parser {
             // TODO should fix
             let token = self.tokens.peek_token();
 
-            if Parser::is_variable_declaration(token) {
-                let statement = self.handle_variable_declaration();
-                let statement = Statement { statement };
-                self.program.body.push(statement)
+            let statement = if Parser::is_variable_declaration(token) {
+                self.handle_variable_declaration()
             } else if Parser::is_return_statement(token) {
-                let statement = self.handle_return_statement();
-                let statement = Statement { statement };
-                self.program.body.push(statement);
-            }
+                self.handle_return_statement()
+            } else if token.token_type == TokenType::EOF{
+                break;
+            } else {
+                self.handle_expression_statement()
+            };
+
+            let statement = Statement { statement };
+            self.program.body.push(statement);
 
             if self.tokens.peek_token().token_type == TokenType::SEMICOLON {
                 self.tokens.read_token();
@@ -118,6 +180,191 @@ impl Parser {
 
     fn is_identifier(token: &Token) -> bool {
         token.token_type == TokenType::IDENTIFIER
+    }
+
+    fn is_sum_operator(token: &Token) -> bool {
+        token.token_type == TokenType::PLUS || token.token_type == TokenType::MINUS
+    }
+
+    fn is_product_operator(token: &Token) -> bool {
+        token.token_type == TokenType::ASTERISK || token.token_type == TokenType::SLASH
+    }
+
+    fn is_equal_operator(token: &Token) -> bool {
+        token.token_type == TokenType::EQUAL || token.token_type == TokenType::NOT_EQUAL
+    }
+
+    fn is_greater_less_operator(token: &Token) -> bool {
+        token.token_type == TokenType::GRATER
+            || token.token_type == TokenType::LESS
+            || token.token_type == TokenType::GRATER_EQUAL
+            || token.token_type == TokenType::LESS_EQUAL
+    }
+
+    fn is_prefix_operator(token: &Token) -> bool {
+        token.token_type == TokenType::EXCLAMATION
+    }
+
+    fn is_semicolon(token: &Token) -> bool {
+        token.token_type == TokenType::SEMICOLON
+    }
+
+    fn is_left_precedencer(left: Precedence, right: Precedence) -> bool {
+        left as u8 > right as u8
+    }
+
+    fn parse_identifier(token: &Token) -> Expression {
+        Expression::Identifier(Identifier {
+            value: token.value.clone(),
+        })
+    }
+
+    fn parse_literal(token: &Token) -> Expression {
+        if Parser::is_number(token) {
+            Parser::parse_int(token)
+        } else {
+            panic!("parse_literal should get only int");
+        }
+    }
+
+    fn parse_int(token: &Token) -> Expression {
+        Expression::Literal(Literal {
+            value: token.value.clone(),
+            literal_type: LiteralType::INT,
+        })
+    }
+
+    fn parse_prefix_operator(token: &Token) -> PrefixOperator {
+        if token.token_type == TokenType::EXCLAMATION {
+            PrefixOperator::EXCLAMATION
+        } else if token.token_type == TokenType::MINUS {
+            PrefixOperator::MINUS
+        } else {
+            panic!("parse_prefix_operator should get exclamation or minus");
+        }
+    }
+
+    fn parse_infix_operator(token: &Token) -> InfixOperator {
+        if token.token_type == TokenType::PLUS {
+            InfixOperator::PLUS
+        } else if token.token_type == TokenType::MINUS {
+            InfixOperator::MINUS
+        } else if token.token_type == TokenType::ASTERISK {
+            InfixOperator::ASTERISK
+        } else if token.token_type == TokenType::SLASH {
+            InfixOperator::SLASH
+        } else if token.token_type == TokenType::GRATER {
+            InfixOperator::GRATER
+        } else if token.token_type == TokenType::GRATER_EQUAL {
+            InfixOperator::GRATER_EQUAL
+        } else if token.token_type == TokenType::LESS {
+            InfixOperator::LESS
+        } else if token.token_type == TokenType::LESS_EQUAL {
+            InfixOperator::LESS_EQUAL
+        } else if token.token_type == TokenType::EQUAL {
+            InfixOperator::EQUAL
+        } else if token.token_type == TokenType::NOT_EQUAL {
+            InfixOperator::NOT_EQUAL
+        } else {
+            panic!("parse_infix_operator should get exclamation or minus");
+        }
+    }
+
+    fn peek_precedence(&self) -> Precedence {
+        let token = self.tokens.peek_token();
+
+        if Parser::is_sum_operator(&token) {
+            Precedence::SUM
+        } else if Parser::is_product_operator(&token) {
+            Precedence::PRODUCT
+        } else if Parser::is_equal_operator(&token) {
+            Precedence::EQUALS
+        } else if Parser::is_greater_less_operator(&token) {
+            Precedence::LESSGREATER
+        } else {
+            Precedence::LOWEST
+        }
+    }
+
+    fn cur_precedence(&self) -> Precedence {
+        let token = self.tokens.cur_token();
+
+        if Parser::is_sum_operator(&token) {
+            Precedence::SUM
+        } else if Parser::is_product_operator(&token) {
+            Precedence::PRODUCT
+        } else if Parser::is_equal_operator(&token) {
+            Precedence::EQUALS
+        } else if Parser::is_greater_less_operator(&token) {
+            Precedence::LESSGREATER
+        } else {
+            Precedence::LOWEST
+        }
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence) -> Expression {
+        let token = self.tokens.cur_token();
+        let mut left_expression = if Parser::is_literal(&token) {
+            Parser::parse_literal(&token)
+        } else if Parser::is_identifier(&token) {
+            Parser::parse_identifier(&token)
+        } else if Parser::is_prefix_operator(&token) {
+            self.parse_prefix_expression()
+        } else {
+            panic!("prefix should be literal or identifier or prefix")
+        };
+
+        while !Parser::is_semicolon(self.tokens.cur_token())
+            && Parser::is_left_precedencer(precedence, self.peek_precedence())
+        {
+            let token = self.tokens.read_token();
+
+            left_expression = if Parser::is_sum_operator(&token) {
+                self.parse_infix_expression(left_expression)
+            } else if Parser::is_product_operator(&token) {
+                self.parse_infix_expression(left_expression)
+            } else if Parser::is_equal_operator(&token) {
+                self.parse_infix_expression(left_expression)
+            } else if Parser::is_greater_less_operator(&token) {
+                self.parse_infix_expression(left_expression)
+            } else {
+                left_expression
+            };
+        }
+
+        left_expression
+    }
+
+    fn parse_prefix_expression(&mut self) -> Expression {
+        let token = self.tokens.cur_token();
+        let operator = Parser::parse_prefix_operator(&token);
+        let expression = PrefixExpression {
+            operator,
+            right: Box::new(self.parse_expression(Precedence::PREFIX)),
+        };
+
+        Expression::PrefixExpression(expression)
+    }
+
+    fn parse_infix_expression(&mut self, left: Expression) -> Expression {
+        let token = self.tokens.cur_token();
+        let operator = Parser::parse_infix_operator(token);
+
+        let precedence = self.cur_precedence();
+
+        let expression = InfixExpression {
+            operator,
+            right: Box::new(self.parse_expression(precedence)),
+            left: Box::new(left),
+        };
+
+        Expression::InfixExpression(expression)
+    }
+
+    fn handle_expression_statement(&mut self) -> StatementType {
+        let expression = self.parse_expression(Precedence::LOWEST);
+
+        StatementType::Expression(expression)
     }
 
     fn handle_return_statement(&mut self) -> StatementType {
