@@ -444,30 +444,17 @@ impl Parser {
 
             let token = self.tokens.read_token();
 
-            if Parser::is_expression(token) {
-                if Parser::is_literal(token) {
-                    let literal_type = if Parser::is_number(&token) {
-                        LiteralType::INT
-                    } else {
-                        panic!("literal type should be INT");
-                    };
-                    let initializer = Literal {
-                        value: token.value.clone(),
-                        literal_type,
-                    };
-                    let initializer = Expression::Literal(initializer);
-                    let statement = VariableDeclaration {
-                        // TODO support const
-                        kind: String::from("let"),
-                        identifier: identifier,
-                        mutation: is_mutate,
-                        init: initializer,
-                    };
-                    return StatementType::VariableDeclaration(statement);
-                } else {
-                    panic!("expression value should be literal type");
-                }
-            }
+            let initializer = self.parse_expression(Precedence::LOWEST);
+
+            let statement = VariableDeclaration {
+                // TODO support const
+                kind: String::from("let"),
+                identifier: identifier,
+                mutation: is_mutate,
+                init: initializer,
+            };
+
+            return StatementType::VariableDeclaration(statement);
 
             panic!("VariableDeclaration's initializer should be expression");
         } else {
