@@ -56,7 +56,7 @@ pub struct VariableDeclaration {
 
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
-    arguments: Vec<Literal>,
+    arguments: Vec<Expression>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -313,6 +313,8 @@ impl Parser {
             self.tokens.cur_token()
         };
 
+        println!("asdf: {:?}", token);
+
         let mut left_expression = if Parser::is_literal(&token) {
             Parser::parse_literal(&token)
         } else if Parser::is_identifier(&token) {
@@ -323,8 +325,9 @@ impl Parser {
             panic!("prefix should be literal or identifier or prefix")
         };
 
-        while !Parser::is_semicolon(self.tokens.cur_token())
+        while !Parser::is_semicolon(self.tokens.peek_token())
             && !Parser::is_left_precedencer(precedence, self.peek_precedence())
+            && self.tokens.peek_token().token_type != TokenType::EOF
         {
             let token = self.tokens.read_token();
 
@@ -385,7 +388,7 @@ impl Parser {
             panic!("handle_return_statement can only handle return");
         }
 
-        let mut arguments: Vec<Literal> = vec![];
+        let mut arguments: Vec<Expression> = vec![];
 
         loop {
             let token = self.tokens.read_token();
@@ -393,18 +396,9 @@ impl Parser {
             if token.token_type == TokenType::SEMICOLON {
                 let statement = ReturnStatement { arguments };
                 return StatementType::ReturnStatement(statement);
-            } else if Parser::is_literal(&token) {
-                if Parser::is_number(&token) {
-                    let argument = Literal {
-                        value: token.value.clone(),
-                        literal_type: LiteralType::INT,
-                    };
-                    arguments.push(argument);
-                } else {
-                    panic!("literal is should be number")
-                }
             } else {
-                panic!("return statement's argument should be literal");
+                let argument = self.parse_expression(Precedence::LOWEST);
+                arguments.push(argument);
             }
         }
     }
@@ -519,7 +513,8 @@ mod tests {
 
         let mut lexer = Lexer::new(&String::from(
             "let mut five = 5;
-        return 5;",
+        return 5;
+        return 2 * 8;",
         ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -541,10 +536,25 @@ mod tests {
                 },
                 Statement {
                     statement: StatementType::ReturnStatement(ReturnStatement {
-                        arguments: vec![Literal {
+                        arguments: vec![Expression::Literal(Literal {
                             value: String::from("5"),
                             literal_type: LiteralType::INT,
-                        }],
+                        })],
+                    }),
+                },
+                Statement {
+                    statement: StatementType::ReturnStatement(ReturnStatement {
+                        arguments: vec![Expression::InfixExpression(InfixExpression {
+                            operator: InfixOperator::ASTERISK,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "8".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                            left: Box::new(Expression::Literal(Literal {
+                                value: "2".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                        })],
                     }),
                 },
             ],
