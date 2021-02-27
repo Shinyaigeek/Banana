@@ -444,30 +444,17 @@ impl Parser {
 
             let token = self.tokens.read_token();
 
-            if Parser::is_expression(token) {
-                if Parser::is_literal(token) {
-                    let literal_type = if Parser::is_number(&token) {
-                        LiteralType::INT
-                    } else {
-                        panic!("literal type should be INT");
-                    };
-                    let initializer = Literal {
-                        value: token.value.clone(),
-                        literal_type,
-                    };
-                    let initializer = Expression::Literal(initializer);
-                    let statement = VariableDeclaration {
-                        // TODO support const
-                        kind: String::from("let"),
-                        identifier: identifier,
-                        mutation: is_mutate,
-                        init: initializer,
-                    };
-                    return StatementType::VariableDeclaration(statement);
-                } else {
-                    panic!("expression value should be literal type");
-                }
-            }
+            let initializer = self.parse_expression(Precedence::LOWEST);
+
+            let statement = VariableDeclaration {
+                // TODO support const
+                kind: String::from("let"),
+                identifier: identifier,
+                mutation: is_mutate,
+                init: initializer,
+            };
+
+            return StatementType::VariableDeclaration(statement);
 
             panic!("VariableDeclaration's initializer should be expression");
         } else {
@@ -485,7 +472,7 @@ mod tests {
         //* variable declaration
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
-        let ten = 10;",
+        let ten = 2 * 8;",
         ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -512,9 +499,16 @@ mod tests {
                             value: String::from("ten"),
                         },
                         mutation: false,
-                        init: Expression::Literal(Literal {
-                            value: String::from("10"),
-                            literal_type: LiteralType::INT,
+                        init: Expression::InfixExpression(InfixExpression {
+                            operator: InfixOperator::ASTERISK,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "8".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                            left: Box::new(Expression::Literal(Literal {
+                                value: "2".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
                         }),
                     }),
                 },
