@@ -472,7 +472,7 @@ mod tests {
         //* variable declaration
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
-        let ten = 10;",
+        let ten = 2 * 8;",
         ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -499,9 +499,16 @@ mod tests {
                             value: String::from("ten"),
                         },
                         mutation: false,
-                        init: Expression::Literal(Literal {
-                            value: String::from("10"),
-                            literal_type: LiteralType::INT,
+                        init: Expression::InfixExpression(InfixExpression {
+                            operator: InfixOperator::ASTERISK,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "8".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                            left: Box::new(Expression::Literal(Literal {
+                                value: "2".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
                         }),
                     }),
                 },
