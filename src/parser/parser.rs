@@ -39,6 +39,7 @@ pub enum StatementType {
     ReturnStatement(ReturnStatement),
     Expression(Expression),
     IfStatement(IfStatement),
+    BlockStatement(BlockStatement)
 }
 
 #[derive(Debug, PartialEq)]
@@ -46,6 +47,11 @@ pub struct IfStatement {
     test: Box<Expression>,
     alternate: Box<Option<StatementType>>,
     consequents: Vec<Statement>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BlockStatement {
+    body: Box<Vec<Statement>>
 }
 
 #[derive(Debug, PartialEq)]
