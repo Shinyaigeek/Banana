@@ -44,7 +44,7 @@ pub enum StatementType {
 #[derive(Debug, PartialEq)]
 pub struct IfStatement {
     test: Box<Expression>,
-    alternate: Box<Option<IfStatement>>,
+    alternate: Box<Option<StatementType>>,
     consequents: Vec<Statement>,
 }
 
@@ -430,9 +430,16 @@ impl Parser {
     }
 
     fn handle_if_statement(&mut self) -> StatementType {
-        let l_paren = self.tokens.read_token();
+        let l_paren = if self.tokens.peek_token().token_type == TokenType::IF {
+            self.tokens.read_token();
+            self.tokens.read_token()
+        } else {
+            self.tokens.read_token()
+        };
 
-        if l_paren.token_type != TokenType::LPAREN {
+        let l_paren = self.tokens.peek_token();
+
+        if l_paren.token_type == TokenType::LPAREN {
             panic!("if statement's test should braced ()");
         }
         let test = self.parse_expression(Precedence::LOWEST);
@@ -451,12 +458,31 @@ impl Parser {
 
         let consequents = self.handle_statements();
 
-        let alternate = None;
+        let r_brace = if self.tokens.cur_token().token_type == TokenType::SEMICOLON {
+            self.tokens.read_token()
+        } else {
+            self.tokens.cur_token()
+        };
+
+        if r_brace.token_type != TokenType::RBRACE {
+            panic!("if statements' consecuents should end with }")
+        }
+
+        if self.tokens.peek_token().token_type == TokenType::ELSE {
+            self.tokens.read_token();
+            let alternate = self.handle_if_statement();
+
+            return StatementType::IfStatement(IfStatement {
+                test: Box::new(test),
+                consequents,
+                alternate: Box::new(Some(alternate)),
+            });
+        }
 
         StatementType::IfStatement(IfStatement {
             test: Box::new(test),
             consequents,
-            alternate: Box::new(alternate),
+            alternate: Box::new(None),
         })
     }
 
@@ -776,6 +802,69 @@ mod tests {
                         })),
                     },
                 )),
+            }],
+        };
+
+        assert_eq!(parser.program, expected);
+
+        let mut lexer = Lexer::new(&String::from(
+            "if (1 == 1) {
+            let hoge = 33;
+        } else if (true) {
+            let fuga = 909;
+        };",
+        ));
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let expected = Program {
+            body: vec![Statement {
+                statement: StatementType::IfStatement(IfStatement {
+                    test: Box::new(Expression::InfixExpression(InfixExpression {
+                        operator: InfixOperator::EQUAL,
+                        right: Box::new(Expression::Literal(Literal {
+                            value: "1".to_string(),
+                            literal_type: LiteralType::INT,
+                        })),
+                        left: Box::new(Expression::Literal(Literal {
+                            value: "1".to_string(),
+                            literal_type: LiteralType::INT,
+                        })),
+                    })),
+                    alternate: Box::new(Some(StatementType::IfStatement(IfStatement {
+                        test: Box::new(Expression::Literal(Literal {
+                            value: "true".to_string(),
+                            literal_type: LiteralType::BOOLEAN,
+                        })),
+                        alternate: Box::new(None),
+                        consequents: vec![Statement {
+                            statement: StatementType::VariableDeclaration(VariableDeclaration {
+                                kind: "let".to_string(),
+                                identifier: Identifier {
+                                    value: "fuga".to_string(),
+                                },
+                                mutation: false,
+                                init: Expression::Literal(Literal {
+                                    value: "909".to_string(),
+                                    literal_type: LiteralType::INT,
+                                }),
+                            }),
+                        }],
+                    }))),
+                    consequents: vec![Statement {
+                        statement: StatementType::VariableDeclaration(VariableDeclaration {
+                            kind: "let".to_string(),
+                            identifier: Identifier {
+                                value: "hoge".to_string(),
+                            },
+                            mutation: false,
+                            init: Expression::Literal(Literal {
+                                value: "33".to_string(),
+                                literal_type: LiteralType::INT,
+                            }),
+                        }),
+                    }],
+                }),
             }],
         };
 
