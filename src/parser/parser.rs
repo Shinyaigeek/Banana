@@ -494,7 +494,12 @@ impl Parser {
 
         if self.tokens.peek_token().token_type == TokenType::ELSE {
             self.tokens.read_token();
-            let alternate = self.handle_if_statement();
+            let alternate = if self.tokens.peek_token().token_type == TokenType::IF {
+                self.handle_if_statement()
+            } else {
+                self.tokens.read_token();
+                self.handle_block_statement()
+            };
 
             return StatementType::IfStatement(IfStatement {
                 test: Box::new(test),
@@ -836,6 +841,8 @@ mod tests {
             let hoge = 33;
         } else if (true) {
             let fuga = 909;
+        }else {
+            let bar = 666;
         };",
         ));
         let mut tokens = Tokens::new(lexer);
@@ -860,7 +867,23 @@ mod tests {
                             value: "true".to_string(),
                             literal_type: LiteralType::BOOLEAN,
                         })),
-                        alternate: Box::new(None),
+                        alternate: Box::new(Some(StatementType::BlockStatement(BlockStatement {
+                            body: vec![Statement {
+                                statement: StatementType::VariableDeclaration(
+                                    VariableDeclaration {
+                                        kind: "let".to_string(),
+                                        identifier: Identifier {
+                                            value: "bar".to_string(),
+                                        },
+                                        mutation: false,
+                                        init: Expression::Literal(Literal {
+                                            value: "666".to_string(),
+                                            literal_type: LiteralType::INT,
+                                        }),
+                                    },
+                                ),
+                            }],
+                        }))),
                         consequents: vec![Statement {
                             statement: StatementType::VariableDeclaration(VariableDeclaration {
                                 kind: "let".to_string(),
