@@ -38,6 +38,14 @@ pub enum StatementType {
     VariableDeclaration(VariableDeclaration),
     ReturnStatement(ReturnStatement),
     Expression(Expression),
+    IfStatement(IfStatement)
+}
+
+#[derive(Debug, PartialEq)]
+pub struct IfStatement {
+    test: Box<Expression>,
+    alternate: Option<IfStatement>,
+    consequent: Vec<Statement>
 }
 
 #[derive(Debug, PartialEq)]
