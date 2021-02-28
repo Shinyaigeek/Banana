@@ -38,6 +38,14 @@ pub enum StatementType {
     VariableDeclaration(VariableDeclaration),
     ReturnStatement(ReturnStatement),
     Expression(Expression),
+    IfStatement(IfStatement),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct IfStatement {
+    test: Box<Expression>,
+    alternate: Box<Option<StatementType>>,
+    consequents: Vec<Statement>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -122,11 +130,17 @@ impl Parser {
     pub fn new(tokens: Tokens) -> Self {
         let mut program = Program { body: vec![] };
         let mut parser = Parser { tokens, program };
-        parser.parse();
         parser
     }
 
     pub fn parse(&mut self) {
+        let statements = self.handle_statements();
+        self.program.body = statements;
+        println!("parse execution done 🎉");
+    }
+
+    fn handle_statements(&mut self) -> Vec<Statement> {
+        let mut statements: Vec<Statement> = vec![];
         loop {
             // TODO should fix
             let token = if Parser::is_semicolon(self.tokens.cur_token()) {
@@ -134,29 +148,33 @@ impl Parser {
             } else {
                 self.tokens.cur_token()
             };
-
             let statement = if Parser::is_variable_declaration(token) {
                 self.handle_variable_declaration()
             } else if Parser::is_return_statement(token) {
                 self.handle_return_statement()
-            } else if token.token_type == TokenType::EOF {
+            } else if token.token_type == TokenType::EOF || token.token_type == TokenType::RBRACE {
                 break;
+            } else if Parser::is_if_block(token) {
+                self.handle_if_statement()
             } else {
                 self.handle_expression_statement()
             };
 
             let statement = Statement { statement };
-            self.program.body.push(statement);
+            statements.push(statement);
 
             if self.tokens.peek_token().token_type == TokenType::SEMICOLON {
                 self.tokens.read_token();
             }
 
-            if self.tokens.peek_token().token_type == TokenType::EOF {
+            if self.tokens.peek_token().token_type == TokenType::EOF
+                || self.tokens.peek_token().token_type == TokenType::RBRACE
+            {
                 break;
             }
         }
-        println!("parse execution done 🎉");
+
+        statements
     }
 
     fn is_return_statement(token: &Token) -> bool {
@@ -165,6 +183,10 @@ impl Parser {
 
     fn is_variable_declaration(token: &Token) -> bool {
         token.token_type == TokenType::LET
+    }
+
+    fn is_if_block(token: &Token) -> bool {
+        token.token_type == TokenType::IF
     }
 
     fn is_assign(token: &Token) -> bool {
@@ -339,9 +361,11 @@ impl Parser {
             panic!("prefix should be literal or identifier or prefix")
         };
 
+        // TODO
         while !Parser::is_semicolon(self.tokens.peek_token())
             && !Parser::is_left_precedencer(precedence, self.peek_precedence())
             && self.tokens.peek_token().token_type != TokenType::EOF
+            && self.tokens.peek_token().token_type != TokenType::LBRACE
         {
             let token = self.tokens.read_token();
 
@@ -403,6 +427,63 @@ impl Parser {
         let expression = self.parse_expression(Precedence::LOWEST);
 
         StatementType::Expression(expression)
+    }
+
+    fn handle_if_statement(&mut self) -> StatementType {
+        let l_paren = if self.tokens.peek_token().token_type == TokenType::IF {
+            self.tokens.read_token();
+            self.tokens.read_token()
+        } else {
+            self.tokens.read_token()
+        };
+
+        let l_paren = self.tokens.peek_token();
+
+        if l_paren.token_type == TokenType::LPAREN {
+            panic!("if statement's test should braced ()");
+        }
+        let test = self.parse_expression(Precedence::LOWEST);
+
+        if self.tokens.read_token().token_type == TokenType::RPAREN {
+            panic!(") should be next to (");
+        }
+
+        let l_brace = self.tokens.cur_token();
+
+        if l_brace.token_type != TokenType::LBRACE {
+            panic!("if statement's consequents should braced {}");
+        }
+
+        self.tokens.read_token();
+
+        let consequents = self.handle_statements();
+
+        let r_brace = if self.tokens.cur_token().token_type == TokenType::SEMICOLON {
+            self.tokens.read_token()
+        } else {
+            self.tokens.cur_token()
+        };
+
+        if r_brace.token_type != TokenType::RBRACE {
+            panic!("if statements' consecuents should end with }")
+        }
+
+        if self.tokens.peek_token().token_type == TokenType::ELSE {
+            self.tokens.read_token();
+            let alternate = self.handle_if_statement();
+
+            return StatementType::IfStatement(IfStatement {
+                test: Box::new(test),
+                consequents,
+                alternate: Box::new(Some(alternate)),
+            });
+        }
+
+        StatementType::IfStatement(IfStatement {
+            test: Box::new(test),
+            consequents,
+            alternate: Box::new(None),
+        })
     }
 
     fn handle_return_statement(&mut self) -> StatementType {
@@ -721,6 +802,69 @@ mod tests {
                         })),
                     },
                 )),
+            }],
+        };
+
+        assert_eq!(parser.program, expected);
+
+        let mut lexer = Lexer::new(&String::from(
+            "if (1 == 1) {
+            let hoge = 33;
+        } else if (true) {
+            let fuga = 909;
+        };",
+        ));
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let expected = Program {
+            body: vec![Statement {
+                statement: StatementType::IfStatement(IfStatement {
+                    test: Box::new(Expression::InfixExpression(InfixExpression {
+                        operator: InfixOperator::EQUAL,
+                        right: Box::new(Expression::Literal(Literal {
+                            value: "1".to_string(),
+                            literal_type: LiteralType::INT,
+                        })),
+                        left: Box::new(Expression::Literal(Literal {
+                            value: "1".to_string(),
+                            literal_type: LiteralType::INT,
+                        })),
+                    })),
+                    alternate: Box::new(Some(StatementType::IfStatement(IfStatement {
+                        test: Box::new(Expression::Literal(Literal {
+                            value: "true".to_string(),
+                            literal_type: LiteralType::BOOLEAN,
+                        })),
+                        alternate: Box::new(None),
+                        consequents: vec![Statement {
+                            statement: StatementType::VariableDeclaration(VariableDeclaration {
+                                kind: "let".to_string(),
+                                identifier: Identifier {
+                                    value: "fuga".to_string(),
+                                },
+                                mutation: false,
+                                init: Expression::Literal(Literal {
+                                    value: "909".to_string(),
+                                    literal_type: LiteralType::INT,
+                                }),
+                            }),
+                        }],
+                    }))),
+                    consequents: vec![Statement {
+                        statement: StatementType::VariableDeclaration(VariableDeclaration {
+                            kind: "let".to_string(),
+                            identifier: Identifier {
+                                value: "hoge".to_string(),
+                            },
+                            mutation: false,
+                            init: Expression::Literal(Literal {
+                                value: "33".to_string(),
+                                literal_type: LiteralType::INT,
+                            }),
+                        }),
+                    }],
+                }),
             }],
         };
 
