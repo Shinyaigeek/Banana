@@ -45,7 +45,7 @@ pub enum StatementType {
 pub struct IfStatement {
     test: Box<Expression>,
     alternate: Box<Option<IfStatement>>,
-    consequent: Vec<Statement>,
+    consequents: Vec<Statement>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -135,7 +135,6 @@ impl Parser {
 
     pub fn parse(&mut self) {
         let statements = self.handle_statements();
-        println!("asdf {:?}", statements);
         self.program.body = statements;
         println!("parse execution done 🎉");
     }
@@ -153,8 +152,10 @@ impl Parser {
                 self.handle_variable_declaration()
             } else if Parser::is_return_statement(token) {
                 self.handle_return_statement()
-            } else if token.token_type == TokenType::EOF {
+            } else if token.token_type == TokenType::EOF || token.token_type == TokenType::RBRACE {
                 break;
+            } else if Parser::is_if_block(token) {
+                self.handle_if_statement()
             } else {
                 self.handle_expression_statement()
             };
@@ -166,7 +167,9 @@ impl Parser {
                 self.tokens.read_token();
             }
 
-            if self.tokens.peek_token().token_type == TokenType::EOF {
+            if self.tokens.peek_token().token_type == TokenType::EOF
+                || self.tokens.peek_token().token_type == TokenType::RBRACE
+            {
                 break;
             }
         }
@@ -180,6 +183,10 @@ impl Parser {
 
     fn is_variable_declaration(token: &Token) -> bool {
         token.token_type == TokenType::LET
+    }
+
+    fn is_if_block(token: &Token) -> bool {
+        token.token_type == TokenType::IF
     }
 
     fn is_assign(token: &Token) -> bool {
@@ -354,9 +361,11 @@ impl Parser {
             panic!("prefix should be literal or identifier or prefix")
         };
 
+        // TODO
         while !Parser::is_semicolon(self.tokens.peek_token())
             && !Parser::is_left_precedencer(precedence, self.peek_precedence())
             && self.tokens.peek_token().token_type != TokenType::EOF
+            && self.tokens.peek_token().token_type != TokenType::LBRACE
         {
             let token = self.tokens.read_token();
 
@@ -418,6 +427,37 @@ impl Parser {
         let expression = self.parse_expression(Precedence::LOWEST);
 
         StatementType::Expression(expression)
+    }
+
+    fn handle_if_statement(&mut self) -> StatementType {
+        let l_paren = self.tokens.read_token();
+
+        if l_paren.token_type != TokenType::LPAREN {
+            panic!("if statement's test should braced ()");
+        }
+        let test = self.parse_expression(Precedence::LOWEST);
+
+        if self.tokens.read_token().token_type == TokenType::RPAREN {
+            panic!(") should be next to (");
+        }
+
+        let l_brace = self.tokens.cur_token();
+
+        if l_brace.token_type != TokenType::LBRACE {
+            panic!("if statement's consequents should braced {}");
+        }
+
+        self.tokens.read_token();
+
+        let consequents = self.handle_statements();
+
+        let alternate = None;
+
+        StatementType::IfStatement(IfStatement {
+            test: Box::new(test),
+            consequents,
+            alternate: Box::new(alternate),
+        })
     }
 
     fn handle_return_statement(&mut self) -> StatementType {
