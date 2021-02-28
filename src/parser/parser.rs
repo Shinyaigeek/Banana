@@ -39,6 +39,7 @@ pub enum StatementType {
     ReturnStatement(ReturnStatement),
     Expression(Expression),
     IfStatement(IfStatement),
+    BlockStatement(BlockStatement),
 }
 
 #[derive(Debug, PartialEq)]
@@ -46,6 +47,11 @@ pub struct IfStatement {
     test: Box<Expression>,
     alternate: Box<Option<StatementType>>,
     consequents: Vec<Statement>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BlockStatement {
+    body: Vec<Statement>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -156,6 +162,8 @@ impl Parser {
                 break;
             } else if Parser::is_if_block(token) {
                 self.handle_if_statement()
+            } else if Parser::is_left_brace(token) {
+                self.handle_block_statement()
             } else {
                 self.handle_expression_statement()
             };
@@ -191,6 +199,10 @@ impl Parser {
 
     fn is_assign(token: &Token) -> bool {
         token.token_type == TokenType::ASSIGN
+    }
+
+    fn is_left_brace(token: &Token) -> bool {
+        token.token_type == TokenType::LBRACE
     }
 
     fn is_expression(token: &Token) -> bool {
@@ -427,6 +439,18 @@ impl Parser {
         let expression = self.parse_expression(Precedence::LOWEST);
 
         StatementType::Expression(expression)
+    }
+
+    fn handle_block_statement(&mut self) -> StatementType {
+        self.tokens.read_token();
+        let statements = self.handle_statements();
+        let r_brace = self.tokens.read_token();
+
+        if r_brace.token_type != TokenType::RBRACE {
+            panic!("block statement should close with }");
+        }
+
+        StatementType::BlockStatement(BlockStatement { body: statements })
     }
 
     fn handle_if_statement(&mut self) -> StatementType {
