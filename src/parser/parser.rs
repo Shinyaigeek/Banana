@@ -206,7 +206,9 @@ impl Parser {
     }
 
     fn is_prefix_operator(token: &Token) -> bool {
-        token.token_type == TokenType::EXCLAMATION || token.token_type == TokenType::MINUS
+        token.token_type == TokenType::EXCLAMATION
+            || token.token_type == TokenType::MINUS
+            || token.token_type == TokenType::LPAREN
     }
 
     fn is_semicolon(token: &Token) -> bool {
@@ -349,6 +351,15 @@ impl Parser {
 
     fn parse_prefix_expression(&mut self) -> Expression {
         let token = self.tokens.cur_token();
+        if token.token_type == TokenType::LPAREN {
+            self.tokens.read_token();
+            let expression = self.parse_expression(Precedence::LOWEST);
+            if self.tokens.peek_token().token_type == TokenType::RPAREN {
+                panic!(") should be next to (");
+            }
+
+            return expression;
+        }
         let operator = Parser::parse_prefix_operator(&token);
         self.tokens.read_token();
         let expression = PrefixExpression {
@@ -466,7 +477,8 @@ mod tests {
         //* variable declaration
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
-        let ten = 2 * 8;",
+        let ten = 2 * 8;
+        let i = (1 + 2) * 8;",
         ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -502,6 +514,33 @@ mod tests {
                             left: Box::new(Expression::Literal(Literal {
                                 value: "2".to_string(),
                                 literal_type: LiteralType::INT,
+                            })),
+                        }),
+                    }),
+                },
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Identifier {
+                            value: String::from("i"),
+                        },
+                        mutation: false,
+                        init: Expression::InfixExpression(InfixExpression {
+                            operator: InfixOperator::ASTERISK,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "8".to_string(),
+                                literal_type: LiteralType::INT,
+                            })),
+                            left: Box::new(Expression::InfixExpression(InfixExpression {
+                                operator: InfixOperator::PLUS,
+                                right: Box::new(Expression::Literal(Literal {
+                                    value: "2".to_string(),
+                                    literal_type: LiteralType::INT,
+                                })),
+                                left: Box::new(Expression::Literal(Literal {
+                                    value: "1".to_string(),
+                                    literal_type: LiteralType::INT,
+                                })),
                             })),
                         }),
                     }),
