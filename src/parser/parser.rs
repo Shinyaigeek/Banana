@@ -109,6 +109,7 @@ pub struct Literal {
 #[derive(Debug, PartialEq)]
 pub enum LiteralType {
     INT,
+    BOOLEAN,
 }
 
 #[derive(Debug, PartialEq)]
@@ -175,11 +176,15 @@ impl Parser {
     }
 
     fn is_literal(token: &Token) -> bool {
-        Parser::is_number(&token)
+        Parser::is_number(&token) || Parser::is_boolean(&token)
     }
 
     fn is_number(token: &Token) -> bool {
         token.token_type == TokenType::INT
+    }
+
+    fn is_boolean(token: &Token) -> bool {
+        token.token_type == TokenType::TRUE || token.token_type == TokenType::FALSE
     }
 
     fn is_identifier(token: &Token) -> bool {
@@ -228,6 +233,8 @@ impl Parser {
     fn parse_literal(token: &Token) -> Expression {
         if Parser::is_number(token) {
             Parser::parse_int(token)
+        } else if Parser::is_boolean(token) {
+            Parser::parse_boolean(token)
         } else {
             panic!("parse_literal should get only int");
         }
@@ -237,6 +244,13 @@ impl Parser {
         Expression::Literal(Literal {
             value: token.value.clone(),
             literal_type: LiteralType::INT,
+        })
+    }
+
+    fn parse_boolean(token: &Token) -> Expression {
+        Expression::Literal(Literal {
+            value: token.value.clone(),
+            literal_type: LiteralType::BOOLEAN,
         })
     }
 
@@ -314,8 +328,6 @@ impl Parser {
         } else {
             self.tokens.cur_token()
         };
-
-        println!("asdf: {:?}", token);
 
         let mut left_expression = if Parser::is_literal(&token) {
             Parser::parse_literal(&token)
@@ -478,7 +490,9 @@ mod tests {
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
         let ten = 2 * 8;
-        let i = (1 + 2) * 8;",
+        let i = (1 + 2) * 8;
+        let t = true;
+        let f = !true;",
         ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -541,6 +555,35 @@ mod tests {
                                     value: "1".to_string(),
                                     literal_type: LiteralType::INT,
                                 })),
+                            })),
+                        }),
+                    }),
+                },
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Identifier {
+                            value: String::from("t"),
+                        },
+                        mutation: false,
+                        init: Expression::Literal(Literal {
+                            value: "true".to_string(),
+                            literal_type: LiteralType::BOOLEAN,
+                        }),
+                    }),
+                },
+                Statement {
+                    statement: StatementType::VariableDeclaration(VariableDeclaration {
+                        kind: String::from("let"),
+                        identifier: Identifier {
+                            value: String::from("f"),
+                        },
+                        mutation: false,
+                        init: Expression::PrefixExpression(PrefixExpression {
+                            operator: PrefixOperator::EXCLAMATION,
+                            right: Box::new(Expression::Literal(Literal {
+                                value: "true".to_string(),
+                                literal_type: LiteralType::BOOLEAN,
                             })),
                         }),
                     }),
