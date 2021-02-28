@@ -38,14 +38,14 @@ pub enum StatementType {
     VariableDeclaration(VariableDeclaration),
     ReturnStatement(ReturnStatement),
     Expression(Expression),
-    IfStatement(IfStatement)
+    IfStatement(IfStatement),
 }
 
 #[derive(Debug, PartialEq)]
 pub struct IfStatement {
     test: Box<Expression>,
-    alternate: Option<IfStatement>,
-    consequent: Vec<Statement>
+    alternate: Box<Option<IfStatement>>,
+    consequent: Vec<Statement>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -130,11 +130,18 @@ impl Parser {
     pub fn new(tokens: Tokens) -> Self {
         let mut program = Program { body: vec![] };
         let mut parser = Parser { tokens, program };
-        parser.parse();
         parser
     }
 
     pub fn parse(&mut self) {
+        let statements = self.handle_statements();
+        println!("asdf {:?}", statements);
+        self.program.body = statements;
+        println!("parse execution done 🎉");
+    }
+
+    fn handle_statements(&mut self) -> Vec<Statement> {
+        let mut statements: Vec<Statement> = vec![];
         loop {
             // TODO should fix
             let token = if Parser::is_semicolon(self.tokens.cur_token()) {
@@ -142,7 +149,6 @@ impl Parser {
             } else {
                 self.tokens.cur_token()
             };
-
             let statement = if Parser::is_variable_declaration(token) {
                 self.handle_variable_declaration()
             } else if Parser::is_return_statement(token) {
@@ -154,7 +160,7 @@ impl Parser {
             };
 
             let statement = Statement { statement };
-            self.program.body.push(statement);
+            statements.push(statement);
 
             if self.tokens.peek_token().token_type == TokenType::SEMICOLON {
                 self.tokens.read_token();
@@ -164,7 +170,8 @@ impl Parser {
                 break;
             }
         }
-        println!("parse execution done 🎉");
+
+        statements
     }
 
     fn is_return_statement(token: &Token) -> bool {
