@@ -580,7 +580,7 @@ impl Parser {
             );
         }
 
-        let arguments = self.parse_function_arguments();¥
+        let arguments = self.parse_function_arguments();
 
         let body = self.handle_block_statement();
 
@@ -686,8 +686,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_works() {
-        //* variable declaration
+    fn variable_declaration_works() {
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
         let ten = 2 * 8;
@@ -793,7 +792,10 @@ mod tests {
         };
 
         assert_eq!(parser.program, expected);
+    }
 
+    #[test]
+    fn return_statement_works() {
         let mut lexer = Lexer::new(&String::from(
             "let mut five = 5;
         return 5;
@@ -844,7 +846,10 @@ mod tests {
         };
 
         assert_eq!(parser.program, expected);
+    }
 
+    #[test]
+    fn parse_expression_works() {
         let mut lexer = Lexer::new(&String::from("1 + 3 * 6 + 2;"));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -882,51 +887,10 @@ mod tests {
         };
 
         assert_eq!(parser.program, expected);
+    }
 
-        let mut lexer = Lexer::new(&String::from("-1 + 3 * -6 + 2;"));
-        let mut tokens = Tokens::new(lexer);
-        let mut parser = Parser::new(tokens);
-        parser.parse();
-        let expected = Program {
-            body: vec![Statement {
-                statement: StatementType::Expression(Expression::InfixExpression(
-                    InfixExpression {
-                        operator: InfixOperator::PLUS,
-                        right: Box::new(Expression::InfixExpression(InfixExpression {
-                            operator: InfixOperator::PLUS,
-                            right: Box::new(Expression::Literal(Literal {
-                                value: "2".to_string(),
-                                literal_type: LiteralType::INT,
-                            })),
-                            left: Box::new(Expression::InfixExpression(InfixExpression {
-                                operator: InfixOperator::ASTERISK,
-                                right: Box::new(Expression::PrefixExpression(PrefixExpression {
-                                    operator: PrefixOperator::MINUS,
-                                    right: Box::new(Expression::Literal(Literal {
-                                        value: "6".to_string(),
-                                        literal_type: LiteralType::INT,
-                                    })),
-                                })),
-                                left: Box::new(Expression::Literal(Literal {
-                                    value: "3".to_string(),
-                                    literal_type: LiteralType::INT,
-                                })),
-                            })),
-                        })),
-                        left: Box::new(Expression::PrefixExpression(PrefixExpression {
-                            operator: PrefixOperator::MINUS,
-                            right: Box::new(Expression::Literal(Literal {
-                                value: "1".to_string(),
-                                literal_type: LiteralType::INT,
-                            })),
-                        })),
-                    },
-                )),
-            }],
-        };
-
-        assert_eq!(parser.program, expected);
-
+    #[test]
+    fn if_declaration_works() {
         let mut lexer = Lexer::new(&String::from(
             "if (1 == 1) {
             let hoge = 33;
