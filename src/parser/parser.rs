@@ -40,6 +40,7 @@ pub enum StatementType {
     Expression(Expression),
     IfStatement(IfStatement),
     BlockStatement(BlockStatement),
+    FunctionDeclarationStatement(FunctionDeclarationStatement),
 }
 
 #[derive(Debug, PartialEq)]
@@ -47,6 +48,13 @@ pub struct IfStatement {
     test: Box<Expression>,
     alternate: Box<Option<StatementType>>,
     consequents: Vec<Statement>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct FunctionDeclarationStatement {
+    arguments: Vec<Identifier>,
+    identifier: Identifier,
+    body: Box<StatementType>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -164,6 +172,8 @@ impl Parser {
                 self.handle_if_statement()
             } else if Parser::is_left_brace(token) {
                 self.handle_block_statement()
+            } else if Parser::is_function_declaration(token) {
+                self.handle_function_declaration_statement()
             } else {
                 self.handle_expression_statement()
             };
@@ -171,14 +181,14 @@ impl Parser {
             let statement = Statement { statement };
             statements.push(statement);
 
-            if self.tokens.peek_token().token_type == TokenType::SEMICOLON {
-                self.tokens.read_token();
-            }
-
-            if self.tokens.peek_token().token_type == TokenType::EOF
-                || self.tokens.peek_token().token_type == TokenType::RBRACE
+            if self.tokens.cur_token().token_type == TokenType::EOF
+                || self.tokens.cur_token().token_type == TokenType::RBRACE
             {
                 break;
+            }
+
+            if self.tokens.peek_token().token_type == TokenType::SEMICOLON {
+                self.tokens.read_token();
             }
         }
 
@@ -193,6 +203,10 @@ impl Parser {
         token.token_type == TokenType::LET
     }
 
+    fn is_function_declaration(token: &Token) -> bool {
+        token.token_type == TokenType::FUNCTION
+    }
+
     fn is_if_block(token: &Token) -> bool {
         token.token_type == TokenType::IF
     }
@@ -203,6 +217,10 @@ impl Parser {
 
     fn is_left_brace(token: &Token) -> bool {
         token.token_type == TokenType::LBRACE
+    }
+
+    fn is_left_paren(token: &Token) -> bool {
+        token.token_type == TokenType::LPAREN
     }
 
     fn is_expression(token: &Token) -> bool {
@@ -444,10 +462,13 @@ impl Parser {
     fn handle_block_statement(&mut self) -> StatementType {
         self.tokens.read_token();
         let statements = self.handle_statements();
-        let r_brace = self.tokens.read_token();
+        let r_brace = self.tokens.cur_token();
 
         if r_brace.token_type != TokenType::RBRACE {
-            panic!("block statement should close with }");
+            panic!(
+                "block statement should close with r_brace, but got {:?}",
+                r_brace
+            );
         }
 
         StatementType::BlockStatement(BlockStatement { body: statements })
@@ -534,6 +555,76 @@ impl Parser {
                 arguments.push(argument);
             }
         }
+    }
+
+    fn handle_function_declaration_statement(&mut self) -> StatementType {
+        let identifier = self.tokens.read_token();
+
+        if !Parser::is_identifier(&identifier) {
+            panic!(
+                "identifier should next to function declarament, but got {:?}",
+                identifier
+            );
+        }
+
+        let identifier = Identifier {
+            value: identifier.value.clone(),
+        };
+
+        let l_paren = self.tokens.peek_token();
+
+        if !Parser::is_left_paren(l_paren) {
+            panic!(
+                "( should next to function declarament, but got {:?}",
+                l_paren
+            );
+        }
+
+        let arguments = self.parse_function_arguments();¥
+
+        let body = self.handle_block_statement();
+
+        StatementType::FunctionDeclarationStatement(FunctionDeclarationStatement {
+            body: Box::new(body),
+            arguments,
+            identifier,
+        })
+    }
+
+    fn parse_function_arguments(&mut self) -> Vec<Identifier> {
+        self.tokens.read_token();
+        let mut arguments: Vec<Identifier> = vec![];
+
+        if self.tokens.peek_token().token_type == TokenType::RPAREN {
+            self.tokens.read_token();
+            return arguments;
+        }
+
+        loop {
+            let argument = self.tokens.read_token();
+
+            if !Parser::is_identifier(argument) {
+                panic!("argument should be identifier, but got {:?}", argument);
+            }
+
+            let argument = Identifier {
+                value: argument.value.clone(),
+            };
+
+            arguments.push(argument);
+
+            let comma = self.tokens.read_token();
+
+            if comma.token_type == TokenType::RPAREN {
+                break;
+            }
+
+            if comma.token_type != TokenType::COMMA {
+                panic!("argument should join with , but got {:?}", comma);
+            }
+        }
+
+        arguments
     }
 
     fn handle_variable_declaration(&mut self) -> StatementType {
