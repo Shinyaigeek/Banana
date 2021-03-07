@@ -28,9 +28,27 @@ pub struct Program {
     body: Vec<Statement>,
 }
 
+impl Program {
+    pub fn print(&self) -> String {
+        let mut res = String::from("");
+        for stmt in &self.body {
+            res.push_str(&stmt.print());
+            res.push_str(";\n");
+        }
+
+        res
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Statement {
     statement: StatementType,
+}
+
+impl Statement {
+    pub fn print(&self) -> String {
+        self.statement.print()
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -43,11 +61,30 @@ pub enum StatementType {
     FunctionDeclarationStatement(FunctionDeclarationStatement),
 }
 
+impl StatementType {
+    pub fn print(&self) -> String {
+        match self {
+            Self::VariableDeclaration(variable_declaration) => VariableDeclaration::print(&variable_declaration),
+            Self::ReturnStatement(return_statement) => ReturnStatement::print(&return_statement),
+            Self::Expression(expression) => Expression::print(&expression),
+            Self::IfStatement(if_statement) => IfStatement::print(&if_statement),
+            Self::BlockStatement(block_statement) => BlockStatement::print(&block_statement),
+            Self::FunctionDeclarationStatement(function_declaration_statement) => FunctionDeclarationStatement::print(&function_declaration_statement)
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct IfStatement {
     test: Box<Expression>,
     alternate: Box<Option<StatementType>>,
     consequents: Vec<Statement>,
+}
+
+impl IfStatement {
+    pub fn print(target: &IfStatement) -> String {
+        String::from("if")
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -57,14 +94,39 @@ pub struct FunctionDeclarationStatement {
     body: Box<StatementType>,
 }
 
+impl FunctionDeclarationStatement {
+    pub fn print(target: &FunctionDeclarationStatement) -> String {
+        format!("fn {}() {}", target.identifier.print(), target.body.print())
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct BlockStatement {
     body: Vec<Statement>,
 }
 
+impl BlockStatement {
+    pub fn print(target: &BlockStatement) -> String {
+        let mut res = String::from("{");
+        for stmt in &target.body {
+            res.push_str(&stmt.print());
+            res.push_str(";");
+        }
+        res.push_str("};");
+
+        res
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Identifier {
     value: String,
+}
+
+impl Identifier {
+    pub fn print(&self) -> String {
+        self.value.clone()
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -76,9 +138,36 @@ pub struct VariableDeclaration {
     init: Expression,
 }
 
+impl VariableDeclaration {
+    pub fn print(target: &VariableDeclaration) -> String {
+        format!(
+            "{} {} = {}",
+            target.kind,
+            target.identifier.print(),
+            Expression::print(&target.init)
+        )
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
     arguments: Vec<Expression>,
+}
+
+impl ReturnStatement {
+    pub fn print(target: &ReturnStatement) -> String {
+        let mut res = String::from("return ");
+        let len = target.arguments.len();
+
+        for i in 0..(len - 1) {
+            res.push_str(&Expression::print(&target.arguments[i]));
+            res.push_str(", ");
+        }
+
+        res.push_str(&Expression::print(&target.arguments[len - 1]));
+
+        res
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -89,10 +178,27 @@ pub enum Expression {
     Identifier(Identifier),
 }
 
+impl Expression {
+    pub fn print(target: &Expression) -> String {
+        match target {
+            Expression::Literal(literal) => Literal::print(literal),
+            Expression::PrefixExpression(prefix_expression) => PrefixExpression::print(prefix_expression),
+            Expression::InfixExpression(infix_expression) => InfixExpression::print(infix_expression),
+            Expression::Identifier(identifier) => Identifier::print(identifier),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct PrefixExpression {
     operator: PrefixOperator,
     right: Box<Expression>,
+}
+
+impl PrefixExpression {
+    pub fn print(target: &PrefixExpression) -> String {
+        format!("{}{}", PrefixOperator::print(&target.operator), Expression::print(&target.right))
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -102,10 +208,30 @@ pub struct InfixExpression {
     left: Box<Expression>,
 }
 
+impl InfixExpression {
+    pub fn print(target: &InfixExpression) -> String {
+        format!(
+            "{} {} {}",
+            Expression::print(&target.left),
+            InfixOperator::print(&target.operator),
+            Expression::print(&target.right)
+        )
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum PrefixOperator {
     EXCLAMATION,
     MINUS,
+}
+
+impl PrefixOperator {
+    pub fn print(target: &PrefixOperator) -> String {
+        match target {
+            PrefixOperator::EXCLAMATION => String::from("!"),
+            PrefixOperator::MINUS => String::from("-")
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -122,10 +248,33 @@ pub enum InfixOperator {
     NOT_EQUAL,
 }
 
+impl InfixOperator {
+    pub fn print(target: &InfixOperator) -> String {
+        match target {
+            InfixOperator::PLUS => String::from("+"),
+            InfixOperator::MINUS => String::from("-"),
+            InfixOperator::ASTERISK => String::from("*"),
+            InfixOperator::SLASH => String::from("/"),
+            InfixOperator::GRATER => String::from(">"),
+            InfixOperator::GRATER_EQUAL => String::from(">="),
+            InfixOperator::LESS => String::from("<"),
+            InfixOperator::LESS_EQUAL => String::from("<="),
+            InfixOperator::EQUAL => String::from("=="),
+            InfixOperator::NOT_EQUAL => String::from("!="),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Literal {
     value: String,
     literal_type: LiteralType,
+}
+
+impl Literal {
+    pub fn print(target: &Literal) -> String {
+        target.value.clone()
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -181,9 +330,11 @@ impl Parser {
             let statement = Statement { statement };
             statements.push(statement);
 
-            if self.tokens.cur_token().token_type == TokenType::EOF
-                || self.tokens.cur_token().token_type == TokenType::RBRACE
-            {
+            if self.tokens.cur_token().token_type == TokenType::EOF {
+                break;
+            }
+            if self.tokens.peek_token().token_type == TokenType::RBRACE {
+                self.tokens.read_token();
                 break;
             }
 
@@ -470,6 +621,8 @@ impl Parser {
                 r_brace
             );
         }
+
+        self.tokens.read_token();
 
         StatementType::BlockStatement(BlockStatement { body: statements })
     }
