@@ -64,12 +64,16 @@ pub enum StatementType {
 impl StatementType {
     pub fn print(&self) -> String {
         match self {
-            Self::VariableDeclaration(variable_declaration) => VariableDeclaration::print(&variable_declaration),
+            Self::VariableDeclaration(variable_declaration) => {
+                VariableDeclaration::print(&variable_declaration)
+            }
             Self::ReturnStatement(return_statement) => ReturnStatement::print(&return_statement),
             Self::Expression(expression) => Expression::print(&expression),
             Self::IfStatement(if_statement) => IfStatement::print(&if_statement),
             Self::BlockStatement(block_statement) => BlockStatement::print(&block_statement),
-            Self::FunctionDeclarationStatement(function_declaration_statement) => FunctionDeclarationStatement::print(&function_declaration_statement)
+            Self::FunctionDeclarationStatement(function_declaration_statement) => {
+                FunctionDeclarationStatement::print(&function_declaration_statement)
+            }
         }
     }
 }
@@ -182,8 +186,12 @@ impl Expression {
     pub fn print(target: &Expression) -> String {
         match target {
             Expression::Literal(literal) => Literal::print(literal),
-            Expression::PrefixExpression(prefix_expression) => PrefixExpression::print(prefix_expression),
-            Expression::InfixExpression(infix_expression) => InfixExpression::print(infix_expression),
+            Expression::PrefixExpression(prefix_expression) => {
+                PrefixExpression::print(prefix_expression)
+            }
+            Expression::InfixExpression(infix_expression) => {
+                InfixExpression::print(infix_expression)
+            }
             Expression::Identifier(identifier) => Identifier::print(identifier),
         }
     }
@@ -197,7 +205,11 @@ pub struct PrefixExpression {
 
 impl PrefixExpression {
     pub fn print(target: &PrefixExpression) -> String {
-        format!("{}{}", PrefixOperator::print(&target.operator), Expression::print(&target.right))
+        format!(
+            "{}{}",
+            PrefixOperator::print(&target.operator),
+            Expression::print(&target.right)
+        )
     }
 }
 
@@ -229,7 +241,7 @@ impl PrefixOperator {
     pub fn print(target: &PrefixOperator) -> String {
         match target {
             PrefixOperator::EXCLAMATION => String::from("!"),
-            PrefixOperator::MINUS => String::from("-")
+            PrefixOperator::MINUS => String::from("-"),
         }
     }
 }
@@ -734,6 +746,8 @@ impl Parser {
         }
 
         let arguments = self.parse_function_arguments();
+        
+        self.tokens.read_token();
 
         let body = self.handle_block_statement();
 
