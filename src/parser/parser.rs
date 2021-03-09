@@ -147,7 +147,7 @@ impl CallExpression {
             arguments.push_str(arg);
             arguments.push_str(", ");
         }
-        format!("{}", self.callee.print())
+        format!("{}({})", self.callee.print(), arguments)
     }
 }
 
@@ -198,6 +198,7 @@ pub enum Expression {
     PrefixExpression(PrefixExpression),
     InfixExpression(InfixExpression),
     Identifier(Identifier),
+    CallExpression(CallExpression),
 }
 
 impl Expression {
@@ -210,6 +211,7 @@ impl Expression {
             Expression::InfixExpression(infix_expression) => {
                 InfixExpression::print(infix_expression)
             }
+            Expression::CallExpression(call_expression) => CallExpression::print(call_expression),
             Expression::Identifier(identifier) => Identifier::print(identifier),
         }
     }
@@ -457,10 +459,19 @@ impl Parser {
         left as u8 > right as u8
     }
 
-    fn parse_identifier(token: &Token) -> Expression {
+    fn parse_identifier(&mut self) -> Expression {
         Expression::Identifier(Identifier {
-            value: token.value.clone(),
+            value: self.tokens.cur_token().value.clone(),
         })
+    }
+
+    fn parse_call_expression(&mut self) -> Expression {
+        let callee = self.tokens.cur_token();
+        let callee = Identifier {
+            value: callee.value.clone(),
+        };
+        let arguments = self.parse_function_arguments();
+        Expression::CallExpression(CallExpression { callee, arguments })
     }
 
     fn parse_literal(token: &Token) -> Expression {
@@ -565,7 +576,11 @@ impl Parser {
         let mut left_expression = if Parser::is_literal(&token) {
             Parser::parse_literal(&token)
         } else if Parser::is_identifier(&token) {
-            Parser::parse_identifier(&token)
+            if Parser::is_left_paren(&self.tokens.peek_token()) {
+                self.parse_call_expression()
+            } else {
+                self.parse_identifier()
+            }
         } else if Parser::is_prefix_operator(&token) {
             self.parse_prefix_expression()
         } else {
