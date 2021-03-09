@@ -134,6 +134,24 @@ impl Identifier {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct CallExpression {
+    callee: Identifier,
+    arguments: Vec<Identifier>,
+}
+
+impl CallExpression {
+    pub fn print(&self) -> String {
+        let mut arguments = String::from("");
+        for arg in &self.arguments {
+            let arg = &arg.print();
+            arguments.push_str(arg);
+            arguments.push_str(", ");
+        }
+        format!("{}", self.callee.print())
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct VariableDeclaration {
     // TODO LiteralUnionField
     kind: String,
@@ -746,7 +764,7 @@ impl Parser {
         }
 
         let arguments = self.parse_function_arguments();
-        
+
         self.tokens.read_token();
 
         let body = self.handle_block_statement();
