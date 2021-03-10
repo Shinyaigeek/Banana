@@ -1,7 +1,8 @@
-mod parser;
 mod evaluator;
+mod parser;
+use crate::evaluator::evaluator::evaluate;
 use crate::parser::lexer::lexer::Lexer;
-use crate::parser::parser::Parser;
+use crate::parser::parser::{Node, Parser};
 use crate::parser::tokenizer::tokenizer::{Token, TokenType, Tokens};
 
 fn main() {
@@ -10,6 +11,7 @@ fn main() {
     let mut tokens = Tokens::new(lexer);
     let mut parser = Parser::new(tokens);
     parser.parse();
-    println!("{:?}", parser.program);
-    println!("{}", parser.program.print());
+    let node = Node::Program(parser.program);
+    evaluate(node);
+    // println!("{}", parser.program.print());
 }

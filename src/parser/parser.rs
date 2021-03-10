@@ -28,7 +28,7 @@ pub enum Precedence {
 pub enum Node {
     Program(Program),
     StatementType(StatementType),
-    Expression(Expression)
+    Expression(Expression),
 }
 
 #[derive(Debug, PartialEq)]
