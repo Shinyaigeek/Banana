@@ -23,9 +23,17 @@ pub enum Precedence {
     CALL,
 }
 
+// TODO 一処理 (便宜上のnode) -> Node -> nodeの種類のステップ挟むの辛い, そもそもこれはNodeなのか :thinking_face:
+#[derive(Debug, PartialEq)]
+pub enum Node {
+    Program(Program),
+    Statement(Statement),
+    Expression(Expression),
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Program {
-    body: Vec<Statement>,
+    pub body: Vec<Statement>,
 }
 
 impl Program {
@@ -42,7 +50,7 @@ impl Program {
 
 #[derive(Debug, PartialEq)]
 pub struct Statement {
-    statement: StatementType,
+    pub statement: StatementType,
 }
 
 impl Statement {
@@ -299,8 +307,8 @@ impl InfixOperator {
 
 #[derive(Debug, PartialEq)]
 pub struct Literal {
-    value: String,
-    literal_type: LiteralType,
+    pub value: String,
+    pub literal_type: LiteralType,
 }
 
 impl Literal {
