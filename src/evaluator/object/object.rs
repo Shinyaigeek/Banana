@@ -7,9 +7,7 @@ pub enum Object {
 impl Object {
     pub fn inspect(&self) -> String {
         match self {
-            Object::Integer(int) => {
-                int.value.to_string()
-            },
+            Object::Integer(int) => int.value.to_string(),
             _ => panic!(""),
         }
     }
