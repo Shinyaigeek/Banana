@@ -23,6 +23,13 @@ pub enum Precedence {
     CALL,
 }
 
+// TODO 一処理 (便宜上のnode) -> Node -> nodeの種類のステップ挟むの辛い, そもそもこれはNodeなのか :thinking_face:
+pub enum Node {
+    Program,
+    StatementType,
+    Expression
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Program {
     body: Vec<Statement>,
