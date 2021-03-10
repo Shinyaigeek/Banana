@@ -1,6 +1,6 @@
-pub fn loop_input<CF>(mut gets: CF)
+pub fn loop_input<CF>(mut handle_input: CF)
 where
     CF: FnMut(String),
 {
-    gets("10;".to_string())
+    handle_input("10;".to_string())
 }
