@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq)]
 pub struct Integer {
-    value: i32,
+    pub value: i32,
 }
