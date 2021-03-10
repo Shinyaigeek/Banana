@@ -3,3 +3,14 @@ pub use crate::evaluator::object::integer::Integer;
 pub enum Object {
     Integer(Integer),
 }
+
+impl Object {
+    pub fn inspect(&self) -> String {
+        match self {
+            Object::Integer(int) => {
+                int.value.to_string()
+            },
+            _ => panic!(""),
+        }
+    }
+}

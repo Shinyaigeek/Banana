@@ -15,6 +15,6 @@ fn main() {
         parser.parse();
         let node = Node::Program(parser.program);
         let result = evaluate(node);
-        println!("{:?}", result);
+        println!("{:?}", result.inspect());
     });
 }
