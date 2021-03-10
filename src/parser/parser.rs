@@ -24,10 +24,11 @@ pub enum Precedence {
 }
 
 // TODO 一処理 (便宜上のnode) -> Node -> nodeの種類のステップ挟むの辛い, そもそもこれはNodeなのか :thinking_face:
+#[derive(Debug, PartialEq)]
 pub enum Node {
-    Program,
-    StatementType,
-    Expression
+    Program(Program),
+    StatementType(StatementType),
+    Expression(Expression)
 }
 
 #[derive(Debug, PartialEq)]
