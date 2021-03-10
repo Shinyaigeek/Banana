@@ -1,4 +1,4 @@
-use crate::evaluator::object::object::{Integer, Object};
+use crate::evaluator::object::object::{Bool, Integer, Object};
 use crate::parser::parser::{Expression, Literal, LiteralType, Node, Statement, StatementType};
 
 pub fn evaluate(node: Node) -> Object {
@@ -11,6 +11,10 @@ pub fn evaluate(node: Node) -> Object {
                         let int: i32 = literal.value.parse().unwrap();
                         Object::Integer(Integer { value: int })
                     }
+                    LiteralType::BOOLEAN => {
+                        let bool: bool = literal.value.parse().unwrap();
+                        Object::Bool(Bool { value: bool })
+                    }
                     _ => panic!(""),
                 },
                 _ => panic!(""),
@@ -22,6 +26,10 @@ pub fn evaluate(node: Node) -> Object {
                 LiteralType::INT => {
                     let int: i32 = literal.value.parse().unwrap();
                     Object::Integer(Integer { value: int })
+                }
+                LiteralType::BOOLEAN => {
+                    let bool: bool = literal.value.parse().unwrap();
+                    Object::Bool(Bool { value: bool })
                 }
                 _ => panic!(""),
             },
