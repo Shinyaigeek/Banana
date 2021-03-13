@@ -1,5 +1,7 @@
 use crate::evaluator::object::object::{Bool, Integer, Object};
-use crate::parser::parser::{Expression, Literal, LiteralType, Node, Statement, StatementType};
+use crate::parser::parser::{Parser, Expression, Literal, LiteralType, Node, Statement, StatementType};
+use crate::parser::lexer::lexer::Lexer;
+use crate::parser::tokenizer::tokenizer::{Tokens};
 
 pub fn evaluate(node: Node) -> Object {
     match node {
@@ -52,4 +54,32 @@ pub fn evaluate_statements(statements: Vec<Statement>) -> Object {
 
 pub fn statement_to_node(statement: Statement) -> Node {
     Node::Statement(statement)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn evaluate_eval_int_works() {
+        let src: String = String::from("5;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node);
+        assert_eq!(result.inspect(), "5".to_string());
+    }
+
+    #[test]
+    fn evaluate_eval_bool_works() {
+        let src: String = String::from("false;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node);
+        assert_eq!(result.inspect(), "false".to_string());
+    }
 }
