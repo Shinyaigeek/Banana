@@ -227,8 +227,8 @@ impl Expression {
 
 #[derive(Debug, PartialEq)]
 pub struct PrefixExpression {
-    operator: PrefixOperator,
-    right: Box<Expression>,
+    pub operator: PrefixOperator,
+    pub right: Box<Expression>,
 }
 
 impl PrefixExpression {
