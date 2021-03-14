@@ -1,7 +1,8 @@
 use crate::evaluator::object::object::{Bool, Integer, Object};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
-    Expression, Literal, LiteralType, Node, Parser, PrefixOperator, Statement, StatementType,
+    Expression, InfixOperator, Literal, LiteralType, Node, Parser, PrefixOperator, Statement,
+    StatementType,
 };
 use crate::parser::tokenizer::tokenizer::Tokens;
 
@@ -55,6 +56,11 @@ pub fn handle_expression(expression: Box<Expression>) -> Object {
                 _ => panic!("prefix operator should be - or !"),
             }
         }
+        Expression::InfixExpression(infix_expression) => {
+            let left = handle_expression(infix_expression.left);
+            let right = handle_expression(infix_expression.right);
+            handle_infix_expression(left, right, infix_expression.operator)
+        }
         _ => panic!(""),
     }
 }
@@ -76,6 +82,177 @@ pub fn handle_prefix_literal(obj: Object, prefix: PrefixOperator) -> Object {
             }),
             Object::Bool(bool) => Object::Bool(Bool { value: !bool.value }),
         }
+    }
+}
+
+pub fn handle_infix_expression(left: Object, right: Object, operator: InfixOperator) -> Object {
+    match operator {
+        InfixOperator::PLUS => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("+ should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("+ should be plused with integer and integer"),
+            };
+
+            Object::Integer(Integer {
+                value: left.value + right.value,
+            })
+        }
+        InfixOperator::MINUS => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("- should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("- should be plused with integer and integer"),
+            };
+
+            Object::Integer(Integer {
+                value: left.value - right.value,
+            })
+        }
+        InfixOperator::ASTERISK => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("* should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("* should be plused with integer and integer"),
+            };
+
+            Object::Integer(Integer {
+                value: left.value * right.value,
+            })
+        }
+        InfixOperator::SLASH => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("/ should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("/ should be plused with integer and integer"),
+            };
+
+            Object::Integer(Integer {
+                value: left.value / right.value,
+            })
+        }
+        InfixOperator::GRATER => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("> should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("> should be plused with integer and integer"),
+            };
+
+            Object::Bool(Bool {
+                value: left.value > right.value,
+            })
+        }
+        InfixOperator::GRATER_EQUAL => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!(">= should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!(">= should be plused with integer and integer"),
+            };
+
+            Object::Bool(Bool {
+                value: left.value >= right.value,
+            })
+        }
+        InfixOperator::LESS => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("< should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("< should be plused with integer and integer"),
+            };
+
+            Object::Bool(Bool {
+                value: left.value < right.value,
+            })
+        }
+        InfixOperator::LESS_EQUAL => {
+            let left = match left {
+                Object::Integer(int) => int,
+                _ => panic!("<= should be plused with integer and integer"),
+            };
+
+            let right = match right {
+                Object::Integer(int) => int,
+                _ => panic!("<= should be plused with integer and integer"),
+            };
+
+            Object::Bool(Bool {
+                value: left.value <= right.value,
+            })
+        }
+        InfixOperator::EQUAL => match left {
+            Object::Integer(left) => {
+                let right = match right {
+                    Object::Integer(int) => int,
+                    _ => panic!("== should be plused with integer and integer"),
+                };
+
+                Object::Bool(Bool {
+                    value: left.value == right.value,
+                })
+            }
+            Object::Bool(left) => {
+                let right = match right {
+                    Object::Bool(boolean) => boolean,
+                    _ => panic!("== should be plused with boolean and boolean"),
+                };
+
+                Object::Bool(Bool {
+                    value: left.value == right.value,
+                })
+            }
+            _ => panic!("== should be plused with integer or boolean"),
+        },
+        InfixOperator::NOT_EQUAL => match left {
+            Object::Integer(left) => {
+                let right = match right {
+                    Object::Integer(int) => int,
+                    _ => panic!("!= should be plused with integer and integer"),
+                };
+
+                Object::Bool(Bool {
+                    value: left.value != right.value,
+                })
+            }
+            Object::Bool(left) => {
+                let right = match right {
+                    Object::Bool(boolean) => boolean,
+                    _ => panic!("!= should be plused with boolean and boolean"),
+                };
+
+                Object::Bool(Bool {
+                    value: left.value != right.value,
+                })
+            }
+            _ => panic!("!= should be plused with integer or boolean"),
+        },
     }
 }
 

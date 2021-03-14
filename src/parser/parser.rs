@@ -243,9 +243,9 @@ impl PrefixExpression {
 
 #[derive(Debug, PartialEq)]
 pub struct InfixExpression {
-    operator: InfixOperator,
-    right: Box<Expression>,
-    left: Box<Expression>,
+    pub operator: InfixOperator,
+    pub right: Box<Expression>,
+    pub left: Box<Expression>,
 }
 
 impl InfixExpression {
