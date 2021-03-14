@@ -419,7 +419,7 @@ impl Parser {
     }
 
     fn is_literal(token: &Token) -> bool {
-        Parser::is_number(&token) || Parser::is_boolean(&token)
+        Parser::is_number(&token) || Parser::is_boolean(&token) || Parser::is_left_brace(&token)
     }
 
     fn is_number(token: &Token) -> bool {
