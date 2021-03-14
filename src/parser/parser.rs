@@ -1047,16 +1047,21 @@ mod tests {
 
     #[test]
     fn object_declaration_works() {
-        let mut lexer = Lexer::new(&String::from("let i = {
+        let mut lexer = Lexer::new(&String::from(
+            "let i = {
 hoge: 1,
-};"));
+};",
+        ));
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
         parser.parse();
-        assert_eq!(parser.program.print(), "let i = {
+        assert_eq!(
+            parser.program.print(),
+            "let i = {
 hoge:1,
 };;
-");
+"
+        );
     }
 
     #[test]
