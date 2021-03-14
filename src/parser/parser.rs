@@ -306,14 +306,70 @@ impl InfixOperator {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Literal {
-    pub value: String,
-    pub literal_type: LiteralType,
+pub enum Literal {
+    Integer(Integer),
+    Boolean(Boolean),
+    ObjectLiteral(ObjectLiteral),
 }
 
 impl Literal {
     pub fn print(target: &Literal) -> String {
-        target.value.clone()
+        match target {
+            Literal::Integer(int) => int.value.clone(),
+            Literal::Boolean(boolean) => boolean.value.clone(),
+            Literal::ObjectLiteral(object) => {
+                let mut stringify = String::from("");
+                stringify.push_str("{\n");
+                for property in &object.properties {
+                    stringify.push_str(&property.key.print());
+                    stringify.push_str(":");
+                    stringify.push_str(&Value::print(&property.value));
+                    stringify.push_str(",");
+                    stringify.push_str("\n");
+                }
+                stringify.push_str("};");
+                stringify.clone()
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Integer {
+    pub value: String,
+    pub literal_type: LiteralType,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Boolean {
+    pub value: String,
+    pub literal_type: LiteralType,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ObjectLiteral {
+    pub properties: Vec<ObjectProperty>,
+    pub literal_type: LiteralType,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ObjectProperty {
+    key: Identifier,
+    value: Value,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Value {
+    Identifier(Identifier),
+    Literal(Literal),
+}
+
+impl Value {
+    pub fn print(target: &Value) -> String {
+        match target {
+            Value::Identifier(identifier) => identifier.print(),
+            Value::Literal(literal) => Literal::print(&literal),
+        }
     }
 }
 
@@ -321,6 +377,7 @@ impl Literal {
 pub enum LiteralType {
     INT,
     BOOLEAN,
+    OBJECT_LITERAL,
 }
 
 #[derive(Debug, PartialEq)]
@@ -410,6 +467,10 @@ impl Parser {
         token.token_type == TokenType::LBRACE
     }
 
+    fn is_right_brace(token: &Token) -> bool {
+        token.token_type == TokenType::RBRACE
+    }
+
     fn is_left_paren(token: &Token) -> bool {
         token.token_type == TokenType::LPAREN
     }
@@ -463,6 +524,14 @@ impl Parser {
         token.token_type == TokenType::SEMICOLON
     }
 
+    fn is_colon(token: &Token) -> bool {
+        token.token_type == TokenType::COLON
+    }
+
+    fn is_comma(token: &Token) -> bool {
+        token.token_type == TokenType::COMMA
+    }
+
     fn is_left_precedencer(left: Precedence, right: Precedence) -> bool {
         left as u8 > right as u8
     }
@@ -482,28 +551,111 @@ impl Parser {
         Expression::CallExpression(CallExpression { callee, arguments })
     }
 
-    fn parse_literal(token: &Token) -> Expression {
+    fn parse_literal(&mut self) -> Expression {
+        let token = self.tokens.cur_token();
         if Parser::is_number(token) {
             Parser::parse_int(token)
         } else if Parser::is_boolean(token) {
             Parser::parse_boolean(token)
+        } else if Parser::is_left_brace(token) {
+            self.parse_object()
         } else {
-            panic!("parse_literal should get only int");
+            panic!(
+                "parse_literal should get only int or boolean or objet, but got {:?}",
+                token
+            );
         }
     }
 
     fn parse_int(token: &Token) -> Expression {
-        Expression::Literal(Literal {
+        Expression::Literal(Literal::Integer(Integer {
             value: token.value.clone(),
             literal_type: LiteralType::INT,
-        })
+        }))
     }
 
     fn parse_boolean(token: &Token) -> Expression {
-        Expression::Literal(Literal {
+        Expression::Literal(Literal::Boolean(Boolean {
             value: token.value.clone(),
             literal_type: LiteralType::BOOLEAN,
-        })
+        }))
+    }
+
+    fn parse_object(&mut self) -> Expression {
+        let l_brace = self.tokens.cur_token();
+
+        if !Parser::is_left_brace(l_brace) {
+            panic!("object should starts with {{, but got {:?}", l_brace);
+        }
+
+        let mut properties: Vec<ObjectProperty> = vec![];
+
+        loop {
+            let key = self.tokens.read_token();
+
+            if !Parser::is_identifier(&key) {
+                panic!("object key should be identifier, but got {:?}", key);
+            }
+
+            let key = Identifier {
+                value: key.value.clone(),
+            };
+
+            let colon = self.tokens.read_token();
+
+            if !Parser::is_colon(&colon) {
+                panic!("colon should be next to object key, but got {:?}", colon);
+            }
+
+            let value = self.tokens.read_token();
+
+            if !Parser::is_literal(&value) && !Parser::is_identifier(&value) {
+                panic!(
+                    "object value should be identifier or literal, but got {:?}",
+                    value
+                );
+            }
+
+            let value = if Parser::is_literal(&value) {
+                self.parse_literal()
+            } else {
+                self.parse_identifier()
+            };
+
+            let value = match value {
+                Expression::Literal(literal) => Value::Literal(literal),
+                Expression::Identifier(identifier) => Value::Identifier(identifier),
+                _ => panic!(
+                    "object value should be literal or identifier, but got {:?}",
+                    value
+                ),
+            };
+
+            let comma = self.tokens.read_token();
+
+            if !Parser::is_comma(&comma) {
+                panic!("object sould be separated with , but got {:?}", comma);
+            }
+
+            let property = ObjectProperty {
+                key: key,
+                value: value,
+            };
+
+            properties.push(property);
+
+            let peek = self.tokens.peek_token();
+
+            if Parser::is_right_brace(&peek) {
+                self.tokens.read_token();
+                break;
+            }
+        }
+
+        Expression::Literal(Literal::ObjectLiteral(ObjectLiteral {
+            properties: properties,
+            literal_type: LiteralType::OBJECT_LITERAL,
+        }))
     }
 
     fn parse_prefix_operator(token: &Token) -> PrefixOperator {
@@ -582,7 +734,7 @@ impl Parser {
         };
 
         let mut left_expression = if Parser::is_literal(&token) {
-            Parser::parse_literal(&token)
+            self.parse_literal()
         } else if Parser::is_identifier(&token) {
             if Parser::is_left_paren(&self.tokens.peek_token()) {
                 self.parse_call_expression()
@@ -914,10 +1066,10 @@ mod tests {
                             value: String::from("five"),
                         },
                         mutation: false,
-                        init: Expression::Literal(Literal {
+                        init: Expression::Literal(Literal::Integer(Integer {
                             value: String::from("5"),
                             literal_type: LiteralType::INT,
-                        }),
+                        })),
                     }),
                 },
                 Statement {
@@ -929,14 +1081,14 @@ mod tests {
                         mutation: false,
                         init: Expression::InfixExpression(InfixExpression {
                             operator: InfixOperator::ASTERISK,
-                            right: Box::new(Expression::Literal(Literal {
+                            right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "8".to_string(),
                                 literal_type: LiteralType::INT,
-                            })),
-                            left: Box::new(Expression::Literal(Literal {
+                            }))),
+                            left: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "2".to_string(),
                                 literal_type: LiteralType::INT,
-                            })),
+                            }))),
                         }),
                     }),
                 },
@@ -949,20 +1101,20 @@ mod tests {
                         mutation: false,
                         init: Expression::InfixExpression(InfixExpression {
                             operator: InfixOperator::ASTERISK,
-                            right: Box::new(Expression::Literal(Literal {
+                            right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "8".to_string(),
                                 literal_type: LiteralType::INT,
-                            })),
+                            }))),
                             left: Box::new(Expression::InfixExpression(InfixExpression {
                                 operator: InfixOperator::PLUS,
-                                right: Box::new(Expression::Literal(Literal {
+                                right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                     value: "2".to_string(),
                                     literal_type: LiteralType::INT,
-                                })),
-                                left: Box::new(Expression::Literal(Literal {
+                                }))),
+                                left: Box::new(Expression::Literal(Literal::Integer(Integer {
                                     value: "1".to_string(),
                                     literal_type: LiteralType::INT,
-                                })),
+                                }))),
                             })),
                         }),
                     }),
@@ -974,10 +1126,10 @@ mod tests {
                             value: String::from("t"),
                         },
                         mutation: false,
-                        init: Expression::Literal(Literal {
+                        init: Expression::Literal(Literal::Boolean(Boolean {
                             value: "true".to_string(),
                             literal_type: LiteralType::BOOLEAN,
-                        }),
+                        })),
                     }),
                 },
                 Statement {
@@ -989,10 +1141,10 @@ mod tests {
                         mutation: false,
                         init: Expression::PrefixExpression(PrefixExpression {
                             operator: PrefixOperator::EXCLAMATION,
-                            right: Box::new(Expression::Literal(Literal {
+                            right: Box::new(Expression::Literal(Literal::Boolean(Boolean {
                                 value: "true".to_string(),
                                 literal_type: LiteralType::BOOLEAN,
-                            })),
+                            }))),
                         }),
                     }),
                 },
@@ -1021,32 +1173,32 @@ mod tests {
                             value: String::from("five"),
                         },
                         mutation: true,
-                        init: Expression::Literal(Literal {
+                        init: Expression::Literal(Literal::Integer(Integer {
                             value: String::from("5"),
                             literal_type: LiteralType::INT,
-                        }),
+                        })),
                     }),
                 },
                 Statement {
                     statement: StatementType::ReturnStatement(ReturnStatement {
-                        arguments: vec![Expression::Literal(Literal {
+                        arguments: vec![Expression::Literal(Literal::Integer(Integer {
                             value: String::from("5"),
                             literal_type: LiteralType::INT,
-                        })],
+                        }))],
                     }),
                 },
                 Statement {
                     statement: StatementType::ReturnStatement(ReturnStatement {
                         arguments: vec![Expression::InfixExpression(InfixExpression {
                             operator: InfixOperator::ASTERISK,
-                            right: Box::new(Expression::Literal(Literal {
+                            right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "8".to_string(),
                                 literal_type: LiteralType::INT,
-                            })),
-                            left: Box::new(Expression::Literal(Literal {
+                            }))),
+                            left: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "2".to_string(),
                                 literal_type: LiteralType::INT,
-                            })),
+                            }))),
                         })],
                     }),
                 },
@@ -1069,26 +1221,26 @@ mod tests {
                         operator: InfixOperator::PLUS,
                         right: Box::new(Expression::InfixExpression(InfixExpression {
                             operator: InfixOperator::PLUS,
-                            right: Box::new(Expression::Literal(Literal {
+                            right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "2".to_string(),
                                 literal_type: LiteralType::INT,
-                            })),
+                            }))),
                             left: Box::new(Expression::InfixExpression(InfixExpression {
                                 operator: InfixOperator::ASTERISK,
-                                right: Box::new(Expression::Literal(Literal {
+                                right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                     value: "6".to_string(),
                                     literal_type: LiteralType::INT,
-                                })),
-                                left: Box::new(Expression::Literal(Literal {
+                                }))),
+                                left: Box::new(Expression::Literal(Literal::Integer(Integer {
                                     value: "3".to_string(),
                                     literal_type: LiteralType::INT,
-                                })),
+                                }))),
                             })),
                         })),
-                        left: Box::new(Expression::Literal(Literal {
+                        left: Box::new(Expression::Literal(Literal::Integer(Integer {
                             value: "1".to_string(),
                             literal_type: LiteralType::INT,
-                        })),
+                        }))),
                     },
                 )),
             }],
@@ -1116,20 +1268,20 @@ mod tests {
                 statement: StatementType::IfStatement(IfStatement {
                     test: Box::new(Expression::InfixExpression(InfixExpression {
                         operator: InfixOperator::EQUAL,
-                        right: Box::new(Expression::Literal(Literal {
+                        right: Box::new(Expression::Literal(Literal::Integer(Integer {
                             value: "1".to_string(),
                             literal_type: LiteralType::INT,
-                        })),
-                        left: Box::new(Expression::Literal(Literal {
+                        }))),
+                        left: Box::new(Expression::Literal(Literal::Integer(Integer {
                             value: "1".to_string(),
                             literal_type: LiteralType::INT,
-                        })),
+                        }))),
                     })),
                     alternate: Box::new(Some(StatementType::IfStatement(IfStatement {
-                        test: Box::new(Expression::Literal(Literal {
+                        test: Box::new(Expression::Literal(Literal::Boolean(Boolean {
                             value: "true".to_string(),
                             literal_type: LiteralType::BOOLEAN,
-                        })),
+                        }))),
                         alternate: Box::new(Some(StatementType::BlockStatement(BlockStatement {
                             body: vec![Statement {
                                 statement: StatementType::VariableDeclaration(
@@ -1139,10 +1291,10 @@ mod tests {
                                             value: "bar".to_string(),
                                         },
                                         mutation: false,
-                                        init: Expression::Literal(Literal {
+                                        init: Expression::Literal(Literal::Integer(Integer {
                                             value: "666".to_string(),
                                             literal_type: LiteralType::INT,
-                                        }),
+                                        })),
                                     },
                                 ),
                             }],
@@ -1154,10 +1306,10 @@ mod tests {
                                     value: "fuga".to_string(),
                                 },
                                 mutation: false,
-                                init: Expression::Literal(Literal {
+                                init: Expression::Literal(Literal::Integer(Integer {
                                     value: "909".to_string(),
                                     literal_type: LiteralType::INT,
-                                }),
+                                })),
                             }),
                         }],
                     }))),
@@ -1168,10 +1320,10 @@ mod tests {
                                 value: "hoge".to_string(),
                             },
                             mutation: false,
-                            init: Expression::Literal(Literal {
+                            init: Expression::Literal(Literal::Integer(Integer {
                                 value: "33".to_string(),
                                 literal_type: LiteralType::INT,
-                            }),
+                            })),
                         }),
                     }],
                 }),

@@ -35,14 +35,15 @@ pub fn statement_to_node(statement: Statement) -> Node {
 
 pub fn handle_expression(expression: Box<Expression>) -> Object {
     match *expression {
-        Expression::Literal(literal) => match literal.literal_type {
-            LiteralType::INT => {
-                let int: i32 = literal.value.parse().unwrap();
+        Expression::Literal(literal) => match literal {
+            Literal::Integer(int) => {
+                let int: i32 = int.value.parse().unwrap();
                 Object::Integer(Integer { value: int })
             }
-            LiteralType::BOOLEAN => {
-                let bool: bool = literal.value.parse().unwrap();
-                Object::Bool(Bool { value: bool })
+
+            Literal::Boolean(boolean) => {
+                let boolean: bool = boolean.value.parse().unwrap();
+                Object::Bool(Bool { value: boolean })
             }
             _ => panic!(""),
         },

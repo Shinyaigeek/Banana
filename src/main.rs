@@ -13,8 +13,8 @@ fn main() {
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
         parser.parse();
-        let node = Node::Program(parser.program);
-        let result = evaluate(node);
-        println!("{:?}", result.inspect());
+        // let node = Node::Program(parser.program);
+        // let result = evaluate(node);
+        println!("{:?}", parser.program);
     });
 }
