@@ -48,12 +48,10 @@ pub fn handle_expression(expression: Box<Expression>) -> Object {
         Expression::PrefixExpression(prefix_expression) => {
             let obj = handle_expression(prefix_expression.right);
             match prefix_expression.operator {
-                PrefixOperator::MINUS => {
-                    handle_prefix_literal(obj, PrefixOperator::MINUS)
-                },
+                PrefixOperator::MINUS => handle_prefix_literal(obj, PrefixOperator::MINUS),
                 PrefixOperator::EXCLAMATION => {
                     handle_prefix_literal(obj, PrefixOperator::EXCLAMATION)
-                },
+                }
                 _ => panic!("prefix operator should be - or !"),
             }
         }
