@@ -1,8 +1,8 @@
 use crate::evaluator::object::object::{Bool, Integer, Object};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
-    Expression, InfixOperator, Literal, LiteralType, Node, Parser, PrefixOperator, Statement,
-    StatementType,
+    BlockStatement, Expression, IfStatement, InfixOperator, Literal, LiteralType, Node, Parser,
+    PrefixOperator, Statement, StatementType,
 };
 use crate::parser::tokenizer::tokenizer::Tokens;
 
@@ -11,6 +11,7 @@ pub fn evaluate(node: Node) -> Object {
         Node::Program(program) => evaluate_statements(program.body),
         Node::Statement(statement) => match statement.statement {
             StatementType::Expression(expression) => handle_expression(Box::new(expression)),
+            StatementType::IfStatement(if_statement) => handle_if_statement(if_statement),
             _ => panic!(""),
         },
         Node::Expression(expression) => handle_expression(Box::new(expression)),
@@ -31,6 +32,33 @@ pub fn evaluate_statements(statements: Vec<Statement>) -> Object {
 
 pub fn statement_to_node(statement: Statement) -> Node {
     Node::Statement(statement)
+}
+
+pub fn handle_if_statement(if_statement: IfStatement) -> Object {
+    let test = handle_expression(if_statement.test);
+    let test = match test {
+        Object::Bool(bool) => bool,
+        _ => panic!("if's test should be boolean"),
+    };
+    if test.value {
+        evaluate_statements(if_statement.consequents)
+    } else {
+        let alternate = if_statement.alternate;
+        match *alternate {
+            Some(alternate) => match alternate {
+                StatementType::IfStatement(if_statement) => handle_if_statement(if_statement),
+                StatementType::BlockStatement(block_statement) => {
+                    handle_block_statement(block_statement)
+                }
+                _ => panic!("if statements' alternate should be if_statement or block statement"),
+            },
+            None => panic!("asdf"),
+        }
+    }
+}
+
+pub fn handle_block_statement(block_statement: BlockStatement) -> Object {
+    evaluate_statements(block_statement.body)
 }
 
 pub fn handle_expression(expression: Box<Expression>) -> Object {
