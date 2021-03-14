@@ -1,4 +1,4 @@
-use crate::evaluator::object::object::{Bool, Integer, Object};
+use crate::evaluator::object::object::{Bool, Integer, Null, Object};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
     BlockStatement, Expression, IfStatement, InfixOperator, Literal, LiteralType, Node, Parser,
@@ -54,7 +54,7 @@ pub fn handle_if_statement(if_statement: IfStatement) -> Object {
                 _ => panic!("if statements' alternate should be if_statement or block statement"),
             },
             // * else
-            None => Object::Bool(Bool { value: false }),
+            None => Object::Null(Null {}),
         }
     }
 }
@@ -105,7 +105,10 @@ pub fn handle_prefix_literal(obj: Object, prefix: PrefixOperator) -> Object {
             Object::Bool(bool) => Object::Integer(Integer {
                 value: if bool.value { -1 } else { 0 },
             }),
-            _ => panic!("prefix literal - should be used with integer or bool, but got {:?}", obj)
+            _ => panic!(
+                "prefix literal - should be used with integer or bool, but got {:?}",
+                obj
+            ),
         }
     } else {
         match obj {

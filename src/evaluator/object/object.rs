@@ -5,7 +5,7 @@ pub use crate::evaluator::object::null::Null;
 pub enum Object {
     Integer(Integer),
     Bool(Bool),
-    Null(Null)
+    Null(Null),
 }
 
 impl Object {
