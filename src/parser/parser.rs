@@ -88,9 +88,9 @@ impl StatementType {
 
 #[derive(Debug, PartialEq)]
 pub struct IfStatement {
-    test: Box<Expression>,
-    alternate: Box<Option<StatementType>>,
-    consequents: Vec<Statement>,
+    pub test: Box<Expression>,
+    pub alternate: Box<Option<StatementType>>,
+    pub consequents: Vec<Statement>,
 }
 
 impl IfStatement {
@@ -114,7 +114,7 @@ impl FunctionDeclarationStatement {
 
 #[derive(Debug, PartialEq)]
 pub struct BlockStatement {
-    body: Vec<Statement>,
+    pub body: Vec<Statement>,
 }
 
 impl BlockStatement {
