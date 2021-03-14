@@ -1046,6 +1046,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn object_declaration_works() {
+        let mut lexer = Lexer::new(&String::from("let i = {
+hoge: 1,
+};"));
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        assert_eq!(parser.program.print(), "let i = {
+hoge:1,
+};;
+");
+    }
+
+    #[test]
     fn variable_declaration_works() {
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
