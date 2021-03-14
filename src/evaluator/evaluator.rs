@@ -47,12 +47,14 @@ pub fn handle_if_statement(if_statement: IfStatement) -> Object {
         match *alternate {
             Some(alternate) => match alternate {
                 StatementType::IfStatement(if_statement) => handle_if_statement(if_statement),
+                // * else
                 StatementType::BlockStatement(block_statement) => {
                     handle_block_statement(block_statement)
                 }
                 _ => panic!("if statements' alternate should be if_statement or block statement"),
             },
-            None => panic!("asdf"),
+            // * else
+            None => Object::Bool(Bool { value: false }),
         }
     }
 }
@@ -103,6 +105,7 @@ pub fn handle_prefix_literal(obj: Object, prefix: PrefixOperator) -> Object {
             Object::Bool(bool) => Object::Integer(Integer {
                 value: if bool.value { -1 } else { 0 },
             }),
+            _ => panic!("prefix literal - should be used with integer or bool, but got {:?}", obj)
         }
     } else {
         match obj {
@@ -110,6 +113,7 @@ pub fn handle_prefix_literal(obj: Object, prefix: PrefixOperator) -> Object {
                 value: int.value == 0,
             }),
             Object::Bool(bool) => Object::Bool(Bool { value: !bool.value }),
+            Object::Null(_) => Object::Bool(Bool { value: true }),
         }
     }
 }
