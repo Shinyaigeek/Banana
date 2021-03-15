@@ -17,6 +17,15 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
             StatementType::IfStatement(if_statement) => {
                 handle_if_statement(if_statement, environment)
             }
+            StatementType::VariableDeclaration(variable_declaration) => {
+                let value = handle_expression(Box::new(variable_declaration.init), environment);
+                environment.set(
+                    variable_declaration.identifier.value,
+                    // TODO
+                    VariableValue::Object(value.clone()),
+                );
+                value
+            }
             _ => panic!(""),
         },
         Node::Expression(expression) => handle_expression(Box::new(expression), environment),
