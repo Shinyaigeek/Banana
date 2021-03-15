@@ -162,10 +162,10 @@ impl CallExpression {
 #[derive(Debug, PartialEq)]
 pub struct VariableDeclaration {
     // TODO LiteralUnionField
-    kind: String,
-    identifier: Identifier,
-    mutation: bool,
-    init: Expression,
+    pub kind: String,
+    pub identifier: Identifier,
+    pub mutation: bool,
+    pub init: Expression,
 }
 
 impl VariableDeclaration {
