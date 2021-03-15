@@ -1,5 +1,5 @@
 use crate::evaluator::object::object::{Bool, Integer, Null, Object};
-use crate::evaluator::variable::variable::VariableValue;
+use crate::evaluator::variable::variable::{Environment, VariableValue};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
     BlockStatement, Expression, IfStatement, InfixOperator, Literal, LiteralType, Node, Parser,
@@ -7,23 +7,27 @@ use crate::parser::parser::{
 };
 use crate::parser::tokenizer::tokenizer::Tokens;
 
-pub fn evaluate(node: Node) -> Object {
+pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
     match node {
-        Node::Program(program) => evaluate_statements(program.body),
+        Node::Program(program) => evaluate_statements(program.body, environment),
         Node::Statement(statement) => match statement.statement {
-            StatementType::Expression(expression) => handle_expression(Box::new(expression)),
-            StatementType::IfStatement(if_statement) => handle_if_statement(if_statement),
+            StatementType::Expression(expression) => {
+                handle_expression(Box::new(expression), environment)
+            }
+            StatementType::IfStatement(if_statement) => {
+                handle_if_statement(if_statement, environment)
+            }
             _ => panic!(""),
         },
-        Node::Expression(expression) => handle_expression(Box::new(expression)),
+        Node::Expression(expression) => handle_expression(Box::new(expression), environment),
         _ => panic!(""),
     }
 }
 
-pub fn evaluate_statements(statements: Vec<Statement>) -> Object {
+pub fn evaluate_statements(statements: Vec<Statement>, environment: &mut Environment) -> Object {
     let mut result: Option<Object> = None;
     for statement in statements {
-        result = Some(evaluate(statement_to_node(statement)));
+        result = Some(evaluate(statement_to_node(statement), environment));
     }
     match result {
         Some(result) => result,
@@ -35,22 +39,24 @@ pub fn statement_to_node(statement: Statement) -> Node {
     Node::Statement(statement)
 }
 
-pub fn handle_if_statement(if_statement: IfStatement) -> Object {
-    let test = handle_expression(if_statement.test);
+pub fn handle_if_statement(if_statement: IfStatement, environment: &mut Environment) -> Object {
+    let test = handle_expression(if_statement.test, environment);
     let test = match test {
         Object::Bool(bool) => bool,
         _ => panic!("if's test should be boolean"),
     };
     if test.value {
-        evaluate_statements(if_statement.consequents)
+        evaluate_statements(if_statement.consequents, environment)
     } else {
         let alternate = if_statement.alternate;
         match *alternate {
             Some(alternate) => match alternate {
-                StatementType::IfStatement(if_statement) => handle_if_statement(if_statement),
+                StatementType::IfStatement(if_statement) => {
+                    handle_if_statement(if_statement, environment)
+                }
                 // * else
                 StatementType::BlockStatement(block_statement) => {
-                    handle_block_statement(block_statement)
+                    handle_block_statement(block_statement, environment)
                 }
                 _ => panic!("if statements' alternate should be if_statement or block statement"),
             },
@@ -60,11 +66,14 @@ pub fn handle_if_statement(if_statement: IfStatement) -> Object {
     }
 }
 
-pub fn handle_block_statement(block_statement: BlockStatement) -> Object {
-    evaluate_statements(block_statement.body)
+pub fn handle_block_statement(
+    block_statement: BlockStatement,
+    environment: &mut Environment,
+) -> Object {
+    evaluate_statements(block_statement.body, environment)
 }
 
-pub fn handle_expression(expression: Box<Expression>) -> Object {
+pub fn handle_expression(expression: Box<Expression>, environment: &mut Environment) -> Object {
     match *expression {
         Expression::Literal(literal) => match literal {
             Literal::Integer(int) => {
@@ -79,25 +88,31 @@ pub fn handle_expression(expression: Box<Expression>) -> Object {
             _ => panic!(""),
         },
         Expression::PrefixExpression(prefix_expression) => {
-            let obj = handle_expression(prefix_expression.right);
+            let obj = handle_expression(prefix_expression.right, environment);
             match prefix_expression.operator {
-                PrefixOperator::MINUS => handle_prefix_literal(obj, PrefixOperator::MINUS),
+                PrefixOperator::MINUS => {
+                    handle_prefix_literal(obj, PrefixOperator::MINUS, environment)
+                }
                 PrefixOperator::EXCLAMATION => {
-                    handle_prefix_literal(obj, PrefixOperator::EXCLAMATION)
+                    handle_prefix_literal(obj, PrefixOperator::EXCLAMATION, environment)
                 }
                 _ => panic!("prefix operator should be - or !"),
             }
         }
         Expression::InfixExpression(infix_expression) => {
-            let left = handle_expression(infix_expression.left);
-            let right = handle_expression(infix_expression.right);
-            handle_infix_expression(left, right, infix_expression.operator)
+            let left = handle_expression(infix_expression.left, environment);
+            let right = handle_expression(infix_expression.right, environment);
+            handle_infix_expression(left, right, infix_expression.operator, environment)
         }
         _ => panic!(""),
     }
 }
 
-pub fn handle_prefix_literal(obj: Object, prefix: PrefixOperator) -> Object {
+pub fn handle_prefix_literal(
+    obj: Object,
+    prefix: PrefixOperator,
+    environment: &mut Environment,
+) -> Object {
     if prefix == PrefixOperator::MINUS {
         match obj {
             Object::Integer(int) => Object::Integer(Integer {
@@ -122,7 +137,12 @@ pub fn handle_prefix_literal(obj: Object, prefix: PrefixOperator) -> Object {
     }
 }
 
-pub fn handle_infix_expression(left: Object, right: Object, operator: InfixOperator) -> Object {
+pub fn handle_infix_expression(
+    left: Object,
+    right: Object,
+    operator: InfixOperator,
+    environment: &mut Environment,
+) -> Object {
     match operator {
         InfixOperator::PLUS => {
             let left = match left {
@@ -304,7 +324,8 @@ mod tests {
         let mut parser = Parser::new(tokens);
         parser.parse();
         let node = Node::Program(parser.program);
-        let result = evaluate(node);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "5".to_string());
     }
 
@@ -316,7 +337,8 @@ mod tests {
         let mut parser = Parser::new(tokens);
         parser.parse();
         let node = Node::Program(parser.program);
-        let result = evaluate(node);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "false".to_string());
     }
 }
