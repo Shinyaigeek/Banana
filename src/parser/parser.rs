@@ -132,7 +132,7 @@ impl BlockStatement {
 
 #[derive(Debug, PartialEq)]
 pub struct Identifier {
-    value: String,
+    pub value: String,
 }
 
 impl Identifier {
