@@ -396,7 +396,6 @@ impl Parser {
     pub fn parse(&mut self) {
         let statements = self.handle_statements();
         self.program.body = statements;
-        println!("parse execution done 🎉");
     }
 
     fn handle_statements(&mut self) -> Vec<Statement> {
