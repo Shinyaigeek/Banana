@@ -15,7 +15,8 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
                 handle_expression(Box::new(expression), environment)
             }
             StatementType::IfStatement(if_statement) => {
-                handle_if_statement(if_statement, environment)
+                let mut environment = environment.extend();
+                handle_if_statement(if_statement, &mut environment)
             }
             StatementType::VariableDeclaration(variable_declaration) => {
                 let value = handle_expression(Box::new(variable_declaration.init), environment);
@@ -96,6 +97,12 @@ pub fn handle_expression(expression: Box<Expression>, environment: &mut Environm
             }
             _ => panic!(""),
         },
+        Expression::Identifier(identifier) => {
+            let value = environment.get(identifier.value);
+            match value {
+                VariableValue::Object(obj) => obj.clone(),
+            }
+        }
         Expression::PrefixExpression(prefix_expression) => {
             let obj = handle_expression(prefix_expression.right, environment);
             match prefix_expression.operator {

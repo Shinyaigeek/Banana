@@ -1,12 +1,12 @@
 pub use crate::evaluator::object::object::Object;
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum VariableValue {
     Object(Object),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Environment {
     // * mutableかどうかなどはvalueの方でもつ
     variables: HashMap<String, VariableValue>,
@@ -32,11 +32,12 @@ impl Environment {
         self.variables.get(&identifier).unwrap()
     }
 
-    pub fn extend(self) -> Environment {
+    // TODO wasted memory
+    pub fn extend(&self) -> Environment {
         Environment {
             variables: HashMap::new(),
             // TODO waste memory
-            outer: Some(Box::new(self)),
+            outer: Some(Box::new(self.clone())),
         }
     }
 
