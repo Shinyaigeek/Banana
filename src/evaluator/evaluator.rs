@@ -1,4 +1,5 @@
 use crate::evaluator::object::object::{Bool, Integer, Null, Object};
+use crate::evaluator::variable::variable::{VariableValue};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
     BlockStatement, Expression, IfStatement, InfixOperator, Literal, LiteralType, Node, Parser,
