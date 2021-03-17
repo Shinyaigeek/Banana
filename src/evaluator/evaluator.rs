@@ -149,6 +149,7 @@ pub fn handle_prefix_literal(
             }),
             Object::Bool(bool) => Object::Bool(Bool { value: !bool.value }),
             Object::Null(_) => Object::Bool(Bool { value: true }),
+            _ => panic!("")
         }
     }
 }
