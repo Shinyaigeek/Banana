@@ -16,6 +16,7 @@ impl Object {
             Object::Integer(int) => int.value.to_string(),
             Object::Bool(bool) => bool.value.to_string(),
             Object::Null(null) => "null;".to_string(),
+            Object::Function(function) => "[object object]".to_string(),
             _ => panic!(""),
         }
     }

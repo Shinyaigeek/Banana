@@ -1,4 +1,4 @@
-use crate::evaluator::object::object::{Bool, Integer, Null, Object};
+use crate::evaluator::object::object::{Bool, Function, Integer, Null, Object};
 use crate::evaluator::variable::variable::{Environment, VariableValue};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
@@ -22,6 +22,26 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
                 let value = handle_expression(Box::new(variable_declaration.init), environment);
                 environment.set(
                     variable_declaration.identifier.value,
+                    // TODO
+                    VariableValue::Object(value.clone()),
+                );
+                value
+            }
+            StatementType::FunctionDeclarationStatement(function_declaration_statement) => {
+                let body = match *function_declaration_statement.body {
+                    StatementType::BlockStatement(block_statement) => block_statement.body,
+                    _ => panic!("function's body should be BlockStatement"),
+                };
+                let arguments = {
+                    let mut res: Vec<String> = vec![];
+                    for argument in function_declaration_statement.arguments {
+                        res.push(argument.value);
+                    }
+                    res
+                };
+                let value = Object::Function(Function { arguments, body });
+                environment.set(
+                    function_declaration_statement.identifier.value,
                     // TODO
                     VariableValue::Object(value.clone()),
                 );
@@ -149,7 +169,7 @@ pub fn handle_prefix_literal(
             }),
             Object::Bool(bool) => Object::Bool(Bool { value: !bool.value }),
             Object::Null(_) => Object::Bool(Bool { value: true }),
-            _ => panic!("")
+            _ => panic!(""),
         }
     }
 }

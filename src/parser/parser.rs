@@ -101,9 +101,9 @@ impl IfStatement {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct FunctionDeclarationStatement {
-    arguments: Vec<Identifier>,
-    identifier: Identifier,
-    body: Box<StatementType>,
+    pub arguments: Vec<Identifier>,
+    pub identifier: Identifier,
+    pub body: Box<StatementType>,
 }
 
 impl FunctionDeclarationStatement {
