@@ -47,7 +47,7 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
                 );
                 value
             }
-            _ => panic!(""),
+            _ => panic!("{:?}", statement),
         },
         Node::Expression(expression) => handle_expression(Box::new(expression), environment),
         _ => panic!(""),
@@ -139,6 +139,27 @@ pub fn handle_expression(expression: Box<Expression>, environment: &mut Environm
             let left = handle_expression(infix_expression.left, environment);
             let right = handle_expression(infix_expression.right, environment);
             handle_infix_expression(left, right, infix_expression.operator, environment)
+        }
+        Expression::CallExpression(call_expression) => {
+            let call = environment.get(call_expression.callee.value);
+            let call = match call {
+                VariableValue::Object(object) => object,
+            };
+            let call = match call {
+                Object::Function(function) => function,
+                _ => panic!(
+                    "function value should be Object::Function, but got {:?}",
+                    call
+                ),
+            };
+            let mut environment_with_args = environment.extend();
+            for idx in 0..(call.arguments.len()) {
+                // TODO valueがidentifier限定になってる(ASTレベルで)
+                let value = environment.get(call_expression.arguments[idx].value.clone());
+                environment_with_args.set(call.arguments[idx].clone(), value.clone());
+            }
+
+            evaluate_statements(call.body.clone(), &mut environment_with_args)
         }
         _ => panic!(""),
     }

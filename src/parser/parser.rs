@@ -143,8 +143,8 @@ impl Identifier {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct CallExpression {
-    callee: Identifier,
-    arguments: Vec<Identifier>,
+    pub callee: Identifier,
+    pub arguments: Vec<Identifier>,
 }
 
 impl CallExpression {
