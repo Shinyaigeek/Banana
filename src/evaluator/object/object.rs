@@ -1,4 +1,5 @@
 pub use crate::evaluator::object::bool::Bool;
+pub use crate::evaluator::object::function::Function;
 pub use crate::evaluator::object::integer::Integer;
 pub use crate::evaluator::object::null::Null;
 #[derive(Debug, PartialEq, Clone)]
@@ -6,6 +7,7 @@ pub enum Object {
     Integer(Integer),
     Bool(Bool),
     Null(Null),
+    Function(Function),
 }
 
 impl Object {
@@ -14,6 +16,7 @@ impl Object {
             Object::Integer(int) => int.value.to_string(),
             Object::Bool(bool) => bool.value.to_string(),
             Object::Null(null) => "null;".to_string(),
+            Object::Function(function) => "[object object]".to_string(),
             _ => panic!(""),
         }
     }

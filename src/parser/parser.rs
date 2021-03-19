@@ -48,7 +48,7 @@ impl Program {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Statement {
     pub statement: StatementType,
 }
@@ -59,7 +59,7 @@ impl Statement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum StatementType {
     VariableDeclaration(VariableDeclaration),
     ReturnStatement(ReturnStatement),
@@ -86,7 +86,7 @@ impl StatementType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IfStatement {
     pub test: Box<Expression>,
     pub alternate: Box<Option<StatementType>>,
@@ -99,11 +99,11 @@ impl IfStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FunctionDeclarationStatement {
-    arguments: Vec<Identifier>,
-    identifier: Identifier,
-    body: Box<StatementType>,
+    pub arguments: Vec<Identifier>,
+    pub identifier: Identifier,
+    pub body: Box<StatementType>,
 }
 
 impl FunctionDeclarationStatement {
@@ -112,7 +112,7 @@ impl FunctionDeclarationStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement {
     pub body: Vec<Statement>,
 }
@@ -130,7 +130,7 @@ impl BlockStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Identifier {
     pub value: String,
 }
@@ -141,10 +141,10 @@ impl Identifier {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CallExpression {
-    callee: Identifier,
-    arguments: Vec<Identifier>,
+    pub callee: Identifier,
+    pub arguments: Vec<Identifier>,
 }
 
 impl CallExpression {
@@ -159,7 +159,7 @@ impl CallExpression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct VariableDeclaration {
     // TODO LiteralUnionField
     pub kind: String,
@@ -179,7 +179,7 @@ impl VariableDeclaration {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
     arguments: Vec<Expression>,
 }
@@ -200,7 +200,7 @@ impl ReturnStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Literal(Literal),
     PrefixExpression(PrefixExpression),
@@ -225,7 +225,7 @@ impl Expression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PrefixExpression {
     pub operator: PrefixOperator,
     pub right: Box<Expression>,
@@ -241,7 +241,7 @@ impl PrefixExpression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct InfixExpression {
     pub operator: InfixOperator,
     pub right: Box<Expression>,
@@ -259,7 +259,7 @@ impl InfixExpression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PrefixOperator {
     EXCLAMATION,
     MINUS,
@@ -274,7 +274,7 @@ impl PrefixOperator {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InfixOperator {
     PLUS,
     MINUS,
@@ -305,7 +305,7 @@ impl InfixOperator {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Integer(Integer),
     Boolean(Boolean),
@@ -334,31 +334,31 @@ impl Literal {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Integer {
     pub value: String,
     pub literal_type: LiteralType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Boolean {
     pub value: String,
     pub literal_type: LiteralType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ObjectLiteral {
     pub properties: Vec<ObjectProperty>,
     pub literal_type: LiteralType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ObjectProperty {
     key: Identifier,
     value: Value,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     Identifier(Identifier),
     Literal(Literal),
@@ -373,7 +373,7 @@ impl Value {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralType {
     INT,
     BOOLEAN,
