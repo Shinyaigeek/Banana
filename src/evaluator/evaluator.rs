@@ -419,6 +419,30 @@ mod tests {
         let node = Node::Program(parser.program);
         let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "5".to_string());
+    }
 
+    #[test]
+    fn evaluate_eval_user_defined_function() {
+        let src: String = String::from("let five = 5;
+let ten = 10;
+fn add(left, right) {
+    left + right;
+};");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "[object object]".to_string());
+        let src: String = String::from("add(five, ten);");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "15".to_string());
     }
 }
