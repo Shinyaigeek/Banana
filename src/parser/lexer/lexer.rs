@@ -59,7 +59,7 @@ impl Lexer {
         let mut identifier: Vec<u8> = Vec::new();
         loop {
             let next_ch = self.peek();
-            if !Lexer::is_digit(next_ch) {
+            if !Lexer::is_digit(next_ch) && !Lexer::is_period(next_ch) {
                 break;
             }
 
@@ -80,6 +80,10 @@ impl Lexer {
 
     pub fn is_digit(ch: u8) -> bool {
         b'0' <= ch && ch <= b'9'
+    }
+
+    pub fn is_period(ch: u8) -> bool {
+        b'.' == ch
     }
 
     pub fn eat_white_space(&mut self) {

@@ -27,6 +27,7 @@ pub const LET: &str = "let";
 pub const FUNCTION: &str = "fn";
 pub const IDENTIFIER: &str = "IDENTIFIER";
 pub const INT: &str = "INT";
+pub const FLOAT: &str = "FLOAT";
 pub const RETURN: &str = "return";
 pub const TRUE: &str = "true";
 pub const FALSE: &str = "false";
@@ -69,6 +70,7 @@ pub enum TokenType {
     FUNCTION,
     IDENTIFIER,
     INT,
+    FLOAT,
     RETURN,
     TRUE,
     FALSE,
@@ -255,7 +257,12 @@ impl Tokens {
 
                         token
                     } else if Lexer::is_digit(ch) {
-                        let token = Token::new(TokenType::INT, self.lexer.read_number());
+                        let num = self.lexer.read_number();
+                        let token = if num.contains(&b'.') {
+                            Token::new(TokenType::FLOAT, num)
+                        }else{
+                            Token::new(TokenType::INT, num)
+                        };
 
                         token
                     } else {
