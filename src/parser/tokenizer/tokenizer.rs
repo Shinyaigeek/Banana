@@ -495,7 +495,7 @@ mod tests {
             ]
         );
 
-        let mut lexer = Lexer::new(&String::from("let mut three = [1, 3, 5]"));
+        let mut lexer = Lexer::new(&String::from("let mut three = [1, 3.5, 5.4321]"));
 
         let tokens = Tokens::new(lexer);
 
@@ -509,9 +509,9 @@ mod tests {
                 Token::__raw_new_(TokenType::LBRACKET, String::from("[")),
                 Token::__raw_new_(TokenType::INT, String::from("1")),
                 Token::__raw_new_(TokenType::COMMA, String::from(",")),
-                Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::FLOAT, String::from("3.5")),
                 Token::__raw_new_(TokenType::COMMA, String::from(",")),
-                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::FLOAT, String::from("5.4321")),
                 Token::__raw_new_(TokenType::RBRACKET, String::from("]")),
                 Token::new(TokenType::EOF, vec![0]),
             ]
