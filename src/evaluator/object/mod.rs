@@ -1,5 +1,6 @@
 pub mod bool;
 pub mod function;
 pub mod integer;
+pub mod float;
 pub mod null;
 pub mod object;

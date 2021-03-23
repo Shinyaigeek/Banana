@@ -1,4 +1,4 @@
-use crate::evaluator::object::object::{Bool, Function, Integer, Null, Object};
+use crate::evaluator::object::object::{Bool, Function, Integer, Null, Object, Float};
 use crate::evaluator::variable::variable::{Environment, VariableValue};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
@@ -109,6 +109,11 @@ pub fn handle_expression(expression: Box<Expression>, environment: &mut Environm
             Literal::Integer(int) => {
                 let int: i32 = int.value.parse().unwrap();
                 Object::Integer(Integer { value: int })
+            }
+
+            Literal::Float(float) => {
+                let float: f32 = float.value.parse().unwrap();
+                Object::Float(Float { value: float })
             }
 
             Literal::Boolean(boolean) => {
@@ -402,7 +407,7 @@ mod tests {
 
     #[test]
     fn evaluate_eval_variable_declaration() {
-        let src: String = String::from("let five = 5;");
+        let src: String = String::from("let five = 5.5;");
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -410,7 +415,7 @@ mod tests {
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
         let result = evaluate(node, &mut environment);
-        assert_eq!(result.inspect(), "5".to_string());
+        assert_eq!(result.inspect(), "5.5".to_string());
         let src: String = String::from("five;");
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
@@ -418,7 +423,7 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let result = evaluate(node, &mut environment);
-        assert_eq!(result.inspect(), "5".to_string());
+        assert_eq!(result.inspect(), "5.5".to_string());
     }
 
     #[test]
