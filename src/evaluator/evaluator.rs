@@ -1,4 +1,4 @@
-use crate::evaluator::object::object::{Bool, Function, Integer, Null, Object};
+use crate::evaluator::object::object::{Bool, Float, Function, Integer, Null, Object};
 use crate::evaluator::variable::variable::{Environment, VariableValue};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
@@ -111,6 +111,11 @@ pub fn handle_expression(expression: Box<Expression>, environment: &mut Environm
                 Object::Integer(Integer { value: int })
             }
 
+            Literal::Float(float) => {
+                let float: f32 = float.value.parse().unwrap();
+                Object::Float(Float { value: float })
+            }
+
             Literal::Boolean(boolean) => {
                 let boolean: bool = boolean.value.parse().unwrap();
                 Object::Bool(Bool { value: boolean })
@@ -175,6 +180,9 @@ pub fn handle_prefix_literal(
             Object::Integer(int) => Object::Integer(Integer {
                 value: -1 * int.value,
             }),
+            Object::Float(float) => Object::Float(Float {
+                value: -1_f32 * float.value,
+            }),
             Object::Bool(bool) => Object::Integer(Integer {
                 value: if bool.value { -1 } else { 0 },
             }),
@@ -187,6 +195,9 @@ pub fn handle_prefix_literal(
         match obj {
             Object::Integer(int) => Object::Bool(Bool {
                 value: int.value == 0,
+            }),
+            Object::Float(float) => Object::Bool(Bool {
+                value: float.value == 0.0,
             }),
             Object::Bool(bool) => Object::Bool(Bool { value: !bool.value }),
             Object::Null(_) => Object::Bool(Bool { value: true }),
@@ -202,171 +213,215 @@ pub fn handle_infix_expression(
     environment: &mut Environment,
 ) -> Object {
     match operator {
-        InfixOperator::PLUS => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("+ should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("+ should be plused with integer and integer"),
-            };
-
-            Object::Integer(Integer {
-                value: left.value + right.value,
-            })
-        }
-        InfixOperator::MINUS => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("- should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("- should be plused with integer and integer"),
-            };
-
-            Object::Integer(Integer {
-                value: left.value - right.value,
-            })
-        }
-        InfixOperator::ASTERISK => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("* should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("* should be plused with integer and integer"),
-            };
-
-            Object::Integer(Integer {
-                value: left.value * right.value,
-            })
-        }
-        InfixOperator::SLASH => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("/ should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("/ should be plused with integer and integer"),
-            };
-
-            Object::Integer(Integer {
-                value: left.value / right.value,
-            })
-        }
-        InfixOperator::GRATER => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("> should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("> should be plused with integer and integer"),
-            };
-
-            Object::Bool(Bool {
-                value: left.value > right.value,
-            })
-        }
-        InfixOperator::GRATER_EQUAL => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!(">= should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!(">= should be plused with integer and integer"),
-            };
-
-            Object::Bool(Bool {
-                value: left.value >= right.value,
-            })
-        }
-        InfixOperator::LESS => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("< should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("< should be plused with integer and integer"),
-            };
-
-            Object::Bool(Bool {
-                value: left.value < right.value,
-            })
-        }
-        InfixOperator::LESS_EQUAL => {
-            let left = match left {
-                Object::Integer(int) => int,
-                _ => panic!("<= should be plused with integer and integer"),
-            };
-
-            let right = match right {
-                Object::Integer(int) => int,
-                _ => panic!("<= should be plused with integer and integer"),
-            };
-
-            Object::Bool(Bool {
-                value: left.value <= right.value,
-            })
-        }
+        InfixOperator::PLUS => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Integer(Integer {
+                    value: left.value + right.value,
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: (left.value as f32) + right.value,
+                }),
+                _ => panic!("+ should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Float(Float {
+                    value: left.value + (right.value as f32),
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: left.value + right.value,
+                }),
+                _ => panic!("+ should be plused with number and number"),
+            },
+            _ => panic!("+ should be plused with number and number"),
+        },
+        InfixOperator::MINUS => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Integer(Integer {
+                    value: left.value - right.value,
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: (left.value as f32) - right.value,
+                }),
+                _ => panic!("- should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Float(Float {
+                    value: left.value - (right.value as f32),
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: left.value - right.value,
+                }),
+                _ => panic!("- should be plused with number and number"),
+            },
+            _ => panic!("- should be plused with number and number"),
+        },
+        InfixOperator::ASTERISK => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Integer(Integer {
+                    value: left.value * right.value,
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: (left.value as f32) * right.value,
+                }),
+                _ => panic!("* should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Float(Float {
+                    value: left.value * (right.value as f32),
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: left.value * right.value,
+                }),
+                _ => panic!("* should be plused with number and number"),
+            },
+            _ => panic!("* should be plused with number and number"),
+        },
+        InfixOperator::SLASH => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Float(Float {
+                    value: (left.value as f32) / (right.value as f32),
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: (left.value as f32) / right.value,
+                }),
+                _ => panic!("/ should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Float(Float {
+                    value: left.value / (right.value as f32),
+                }),
+                Object::Float(right) => Object::Float(Float {
+                    value: left.value / right.value,
+                }),
+                _ => panic!("/ should be plused with number and number"),
+            },
+            _ => panic!("/ should be plused with number and number"),
+        },
+        InfixOperator::GRATER => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value > right.value,
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: (left.value as f32) > right.value,
+                }),
+                _ => panic!("> should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value > (right.value as f32),
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: left.value > right.value,
+                }),
+                _ => panic!("> should be plused with number and number"),
+            },
+            _ => panic!("> should be plused with number and number"),
+        },
+        InfixOperator::GRATER_EQUAL => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value >= right.value,
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: (left.value as f32) >= right.value,
+                }),
+                _ => panic!(">= should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value >= (right.value as f32),
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: left.value >= right.value,
+                }),
+                _ => panic!(">= should be plused with number and number"),
+            },
+            _ => panic!(">= should be plused with number and number"),
+        },
+        InfixOperator::LESS => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value < right.value,
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: (left.value as f32) < right.value,
+                }),
+                _ => panic!("< should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value < (right.value as f32),
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: left.value < right.value,
+                }),
+                _ => panic!("< should be plused with number and number"),
+            },
+            _ => panic!("< should be plused with number and number"),
+        },
+        InfixOperator::LESS_EQUAL => match left {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value <= right.value,
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: (left.value as f32) <= right.value,
+                }),
+                _ => panic!("<= s>hould be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value <= (right.value as f32),
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: left.value <= right.value,
+                }),
+                _ => panic!("<= s>hould be plused with number and number"),
+            },
+            _ => panic!("<= s>hould be plused with number and number"),
+        },
         InfixOperator::EQUAL => match left {
-            Object::Integer(left) => {
-                let right = match right {
-                    Object::Integer(int) => int,
-                    _ => panic!("== should be plused with integer and integer"),
-                };
-
-                Object::Bool(Bool {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
                     value: left.value == right.value,
-                })
-            }
-            Object::Bool(left) => {
-                let right = match right {
-                    Object::Bool(boolean) => boolean,
-                    _ => panic!("== should be plused with boolean and boolean"),
-                };
-
-                Object::Bool(Bool {
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: (left.value as f32) == right.value,
+                }),
+                _ => panic!("== should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value == (right.value as f32),
+                }),
+                Object::Float(right) => Object::Bool(Bool {
                     value: left.value == right.value,
-                })
-            }
-            _ => panic!("== should be plused with integer or boolean"),
+                }),
+                _ => panic!("== should be plused with number and number"),
+            },
+            _ => panic!("== should be plused with number and number"),
         },
         InfixOperator::NOT_EQUAL => match left {
-            Object::Integer(left) => {
-                let right = match right {
-                    Object::Integer(int) => int,
-                    _ => panic!("!= should be plused with integer and integer"),
-                };
-
-                Object::Bool(Bool {
+            Object::Integer(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
                     value: left.value != right.value,
-                })
-            }
-            Object::Bool(left) => {
-                let right = match right {
-                    Object::Bool(boolean) => boolean,
-                    _ => panic!("!= should be plused with boolean and boolean"),
-                };
-
-                Object::Bool(Bool {
+                }),
+                Object::Float(right) => Object::Bool(Bool {
+                    value: (left.value as f32) != right.value,
+                }),
+                _ => panic!("!= should be plused with number and number"),
+            },
+            Object::Float(left) => match right {
+                Object::Integer(right) => Object::Bool(Bool {
+                    value: left.value != (right.value as f32),
+                }),
+                Object::Float(right) => Object::Bool(Bool {
                     value: left.value != right.value,
-                })
-            }
-            _ => panic!("!= should be plused with integer or boolean"),
+                }),
+                _ => panic!("!= should be plused with number and number"),
+            },
+            _ => panic!("!= should be plused with number and number"),
         },
     }
 }
@@ -401,8 +456,8 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_eval_variable_declaration() {
-        let src: String = String::from("let five = 5;");
+    fn evaluate_prefix_expression_minus_int() {
+        let src: String = String::from("-5;");
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
@@ -410,7 +465,119 @@ mod tests {
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
         let result = evaluate(node, &mut environment);
-        assert_eq!(result.inspect(), "5".to_string());
+        assert_eq!(result.inspect(), "-5".to_string());
+    }
+
+    #[test]
+    fn evaluate_prefix_expression_minus_float() {
+        let src: String = String::from("-1.25;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "-1.25".to_string());
+    }
+
+    #[test]
+    fn evaluate_infix_expression_int() {
+        let src: String = String::from("5 + 6;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "11".to_string());
+
+        let src: String = String::from("5 * 6;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "30".to_string());
+
+        let src: String = String::from("5 - 6;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "-1".to_string());
+
+        let src: String = String::from("6 / 2;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "3".to_string());
+    }
+
+    #[test]
+    fn evaluate_infix_expression_float() {
+        let src: String = String::from("5 * 6.2;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "31".to_string());
+
+        let src: String = String::from("5 + 6.2;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "11.2".to_string());
+
+        let src: String = String::from("5 == 5.0;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "true".to_string());
+
+        let src: String = String::from("5 / 2;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "2.5".to_string());
+    }
+
+    #[test]
+    fn evaluate_eval_variable_declaration() {
+        let src: String = String::from("let five = 5.5;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "5.5".to_string());
         let src: String = String::from("five;");
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
@@ -418,16 +585,18 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let result = evaluate(node, &mut environment);
-        assert_eq!(result.inspect(), "5".to_string());
+        assert_eq!(result.inspect(), "5.5".to_string());
     }
 
     #[test]
     fn evaluate_eval_user_defined_function() {
-        let src: String = String::from("let five = 5;
+        let src: String = String::from(
+            "let five = 5;
 let ten = 10;
 fn add(left, right) {
     left + right;
-};");
+};",
+        );
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);

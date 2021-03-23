@@ -308,6 +308,7 @@ impl InfixOperator {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Integer(Integer),
+    Float(Float),
     Boolean(Boolean),
     ObjectLiteral(ObjectLiteral),
 }
@@ -316,6 +317,7 @@ impl Literal {
     pub fn print(target: &Literal) -> String {
         match target {
             Literal::Integer(int) => int.value.clone(),
+            Literal::Float(float) => float.value.clone(),
             Literal::Boolean(boolean) => boolean.value.clone(),
             Literal::ObjectLiteral(object) => {
                 let mut stringify = String::from("");
@@ -336,6 +338,12 @@ impl Literal {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Integer {
+    pub value: String,
+    pub literal_type: LiteralType,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Float {
     pub value: String,
     pub literal_type: LiteralType,
 }
@@ -376,6 +384,7 @@ impl Value {
 #[derive(Debug, PartialEq, Clone)]
 pub enum LiteralType {
     INT,
+    FLOAT,
     BOOLEAN,
     OBJECT_LITERAL,
 }
@@ -483,7 +492,7 @@ impl Parser {
     }
 
     fn is_number(token: &Token) -> bool {
-        token.token_type == TokenType::INT
+        token.token_type == TokenType::INT || token.token_type == TokenType::FLOAT
     }
 
     fn is_boolean(token: &Token) -> bool {
@@ -553,7 +562,11 @@ impl Parser {
     fn parse_literal(&mut self) -> Expression {
         let token = self.tokens.cur_token();
         if Parser::is_number(token) {
-            Parser::parse_int(token)
+            if token.token_type == TokenType::INT {
+                Parser::parse_int(token)
+            } else {
+                Parser::parse_float(token)
+            }
         } else if Parser::is_boolean(token) {
             Parser::parse_boolean(token)
         } else if Parser::is_left_brace(token) {
@@ -570,6 +583,13 @@ impl Parser {
         Expression::Literal(Literal::Integer(Integer {
             value: token.value.clone(),
             literal_type: LiteralType::INT,
+        }))
+    }
+
+    fn parse_float(token: &Token) -> Expression {
+        Expression::Literal(Literal::Float(Float {
+            value: token.value.clone(),
+            literal_type: LiteralType::FLOAT,
         }))
     }
 
@@ -1068,7 +1088,7 @@ hoge:1,
         let mut lexer = Lexer::new(&String::from(
             "let five = 5;
         let ten = 2 * 8;
-        let i = (1 + 2) * 8;
+        let i = (1 + 2) * 8.5;
         let t = true;
         let f = !true;",
         ));
@@ -1119,9 +1139,9 @@ hoge:1,
                         mutation: false,
                         init: Expression::InfixExpression(InfixExpression {
                             operator: InfixOperator::ASTERISK,
-                            right: Box::new(Expression::Literal(Literal::Integer(Integer {
-                                value: "8".to_string(),
-                                literal_type: LiteralType::INT,
+                            right: Box::new(Expression::Literal(Literal::Float(Float {
+                                value: "8.5".to_string(),
+                                literal_type: LiteralType::FLOAT,
                             }))),
                             left: Box::new(Expression::InfixExpression(InfixExpression {
                                 operator: InfixOperator::PLUS,
