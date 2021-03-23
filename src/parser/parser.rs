@@ -564,7 +564,7 @@ impl Parser {
         if Parser::is_number(token) {
             if token.token_type == TokenType::INT {
                 Parser::parse_int(token)
-            }else{
+            } else {
                 Parser::parse_float(token)
             }
         } else if Parser::is_boolean(token) {

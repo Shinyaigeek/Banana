@@ -260,7 +260,7 @@ impl Tokens {
                         let num = self.lexer.read_number();
                         let token = if num.contains(&b'.') {
                             Token::new(TokenType::FLOAT, num)
-                        }else{
+                        } else {
                             Token::new(TokenType::INT, num)
                         };
 

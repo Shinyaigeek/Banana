@@ -1,4 +1,4 @@
-use crate::evaluator::object::object::{Bool, Function, Integer, Null, Object, Float};
+use crate::evaluator::object::object::{Bool, Float, Function, Integer, Null, Object};
 use crate::evaluator::variable::variable::{Environment, VariableValue};
 use crate::parser::lexer::lexer::Lexer;
 use crate::parser::parser::{
@@ -180,6 +180,9 @@ pub fn handle_prefix_literal(
             Object::Integer(int) => Object::Integer(Integer {
                 value: -1 * int.value,
             }),
+            Object::Float(float) => Object::Float(Float {
+                value: -1_f32 * float.value,
+            }),
             Object::Bool(bool) => Object::Integer(Integer {
                 value: if bool.value { -1 } else { 0 },
             }),
@@ -192,6 +195,9 @@ pub fn handle_prefix_literal(
         match obj {
             Object::Integer(int) => Object::Bool(Bool {
                 value: int.value == 0,
+            }),
+            Object::Float(float) => Object::Bool(Bool {
+                value: float.value == 0.0,
             }),
             Object::Bool(bool) => Object::Bool(Bool { value: !bool.value }),
             Object::Null(_) => Object::Bool(Bool { value: true }),
@@ -406,6 +412,32 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_prefix_expression_minus_int() {
+        let src: String = String::from("-5;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "-5".to_string());
+    }
+
+    #[test]
+    fn evaluate_prefix_expression_minus_float() {
+        let src: String = String::from("-1.25;");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "-1.25".to_string());
+    }
+
+    #[test]
     fn evaluate_eval_variable_declaration() {
         let src: String = String::from("let five = 5.5;");
         let mut lexer = Lexer::new(&src);
@@ -428,11 +460,13 @@ mod tests {
 
     #[test]
     fn evaluate_eval_user_defined_function() {
-        let src: String = String::from("let five = 5;
+        let src: String = String::from(
+            "let five = 5;
 let ten = 10;
 fn add(left, right) {
     left + right;
-};");
+};",
+        );
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
