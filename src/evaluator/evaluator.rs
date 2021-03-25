@@ -423,11 +423,13 @@ mod tests {
 
     #[test]
     fn evaluate_eval_user_defined_function() {
-        let src: String = String::from("let five = 5;
+        let src: String = String::from(
+            "let five = 5;
 let ten = 10;
 fn add(left, right) {
     left + right;
-};");
+};",
+        );
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
         let mut parser = Parser::new(tokens);
