@@ -8,6 +8,8 @@ where
     let mut src = String::from(src);
     io::stdin().read_line(&mut buffer);
 
+    // println!("buffer: {}", buffer);
+
     src.push_str(&buffer);
     let depth_diff = count_char_in_string('{', &buffer) - count_char_in_string('}', &buffer);
 

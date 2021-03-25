@@ -27,6 +27,7 @@ pub const LET: &str = "let";
 pub const FUNCTION: &str = "fn";
 pub const IDENTIFIER: &str = "IDENTIFIER";
 pub const INT: &str = "INT";
+pub const FLOAT: &str = "FLOAT";
 pub const RETURN: &str = "return";
 pub const TRUE: &str = "true";
 pub const FALSE: &str = "false";
@@ -69,6 +70,7 @@ pub enum TokenType {
     FUNCTION,
     IDENTIFIER,
     INT,
+    FLOAT,
     RETURN,
     TRUE,
     FALSE,
@@ -255,7 +257,12 @@ impl Tokens {
 
                         token
                     } else if Lexer::is_digit(ch) {
-                        let token = Token::new(TokenType::INT, self.lexer.read_number());
+                        let num = self.lexer.read_number();
+                        let token = if num.contains(&b'.') {
+                            Token::new(TokenType::FLOAT, num)
+                        } else {
+                            Token::new(TokenType::INT, num)
+                        };
 
                         token
                     } else {
@@ -488,7 +495,7 @@ mod tests {
             ]
         );
 
-        let mut lexer = Lexer::new(&String::from("let mut three = [1, 3, 5]"));
+        let mut lexer = Lexer::new(&String::from("let mut three = [1, 3.5, 5.4321]"));
 
         let tokens = Tokens::new(lexer);
 
@@ -502,9 +509,9 @@ mod tests {
                 Token::__raw_new_(TokenType::LBRACKET, String::from("[")),
                 Token::__raw_new_(TokenType::INT, String::from("1")),
                 Token::__raw_new_(TokenType::COMMA, String::from(",")),
-                Token::__raw_new_(TokenType::INT, String::from("3")),
+                Token::__raw_new_(TokenType::FLOAT, String::from("3.5")),
                 Token::__raw_new_(TokenType::COMMA, String::from(",")),
-                Token::__raw_new_(TokenType::INT, String::from("5")),
+                Token::__raw_new_(TokenType::FLOAT, String::from("5.4321")),
                 Token::__raw_new_(TokenType::RBRACKET, String::from("]")),
                 Token::new(TokenType::EOF, vec![0]),
             ]
