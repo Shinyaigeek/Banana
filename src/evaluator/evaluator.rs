@@ -35,7 +35,7 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
                 let arguments = {
                     let mut res: Vec<String> = vec![];
                     for argument in function_declaration_statement.arguments {
-                        res.push(argument.value);
+                        res.push(argument.value.clone());
                     }
                     res
                 };
@@ -157,10 +157,14 @@ pub fn handle_expression(expression: Box<Expression>, environment: &mut Environm
                     call
                 ),
             };
+            let call = call.clone();
             let mut environment_with_args = environment.extend();
             for idx in 0..(call.arguments.len()) {
-                // TODO valueがidentifier限定になってる(ASTレベルで)
-                let value = environment.get(call_expression.arguments[idx].value.clone());
+                let value = handle_expression(
+                    Box::new(call_expression.arguments[idx].clone()),
+                    environment,
+                );
+                let value = VariableValue::Object(value);
                 environment_with_args.set(call.arguments[idx].clone(), value.clone());
             }
 

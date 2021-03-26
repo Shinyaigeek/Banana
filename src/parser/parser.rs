@@ -144,15 +144,15 @@ impl Identifier {
 #[derive(Debug, PartialEq, Clone)]
 pub struct CallExpression {
     pub callee: Identifier,
-    pub arguments: Vec<Identifier>,
+    pub arguments: Vec<Expression>,
 }
 
 impl CallExpression {
     pub fn print(&self) -> String {
         let mut arguments = String::from("");
         for arg in &self.arguments {
-            let arg = &arg.print();
-            arguments.push_str(arg);
+            let arg = Expression::print(&arg);
+            arguments.push_str(&arg);
             arguments.push_str(", ");
         }
         format!("{}({})", self.callee.print(), arguments)
@@ -957,7 +957,7 @@ impl Parser {
             );
         }
 
-        let arguments = self.parse_function_arguments();
+        let arguments = self.parse_function_declaration_arguments();
 
         self.tokens.read_token();
 
@@ -970,7 +970,7 @@ impl Parser {
         })
     }
 
-    fn parse_function_arguments(&mut self) -> Vec<Identifier> {
+    fn parse_function_declaration_arguments(&mut self) -> Vec<Identifier> {
         self.tokens.read_token();
         let mut arguments: Vec<Identifier> = vec![];
 
@@ -989,6 +989,40 @@ impl Parser {
             let argument = Identifier {
                 value: argument.value.clone(),
             };
+
+            arguments.push(argument);
+
+            let comma = self.tokens.read_token();
+
+            if comma.token_type == TokenType::RPAREN {
+                break;
+            }
+
+            if comma.token_type != TokenType::COMMA {
+                panic!("argument should join with , but got {:?}", comma);
+            }
+        }
+
+        arguments
+    }
+
+    fn parse_function_arguments(&mut self) -> Vec<Expression> {
+        self.tokens.read_token();
+        let mut arguments: Vec<Expression> = vec![];
+
+        if self.tokens.peek_token().token_type == TokenType::RPAREN {
+            self.tokens.read_token();
+            return arguments;
+        }
+
+        loop {
+            let argument = self.tokens.read_token();
+
+            if !Parser::is_expression(argument) {
+                panic!("argument should be expression, but got {:?}", argument);
+            }
+
+            let argument = self.parse_expression(Precedence::LOWEST);
 
             arguments.push(argument);
 
