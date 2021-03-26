@@ -569,6 +569,22 @@ mod tests {
         let mut environment = Environment::new();
         let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "2.5".to_string());
+
+        let src: String = String::from(
+            "fn add(left, right) {
+            left + right;
+        };
+        
+        add(2, 3) * 4;",
+        );
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "20".to_string());
     }
 
     #[test]
@@ -617,5 +633,21 @@ fn add(left, right) {
         let node = Node::Program(parser.program);
         let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "15".to_string());
+        let src: String = String::from("add(3, 4);");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "7".to_string());
+        let src: String = String::from("add(3 * 4, ten);");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "22".to_string());
     }
 }

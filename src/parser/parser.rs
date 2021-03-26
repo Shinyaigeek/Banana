@@ -485,6 +485,8 @@ impl Parser {
 
     fn is_expression(token: &Token) -> bool {
         Parser::is_literal(&token)
+            || Parser::is_identifier(&token)
+            || Parser::is_prefix_operator(&token)
     }
 
     fn is_literal(token: &Token) -> bool {
@@ -752,6 +754,12 @@ impl Parser {
             self.tokens.cur_token()
         };
 
+        let mut depth = if token.token_type == TokenType::LPAREN {
+            1
+        } else {
+            0
+        };
+
         let mut left_expression = if Parser::is_literal(&token) {
             self.parse_literal()
         } else if Parser::is_identifier(&token) {
@@ -771,6 +779,8 @@ impl Parser {
             && !Parser::is_left_precedencer(precedence, self.peek_precedence())
             && self.tokens.peek_token().token_type != TokenType::EOF
             && self.tokens.peek_token().token_type != TokenType::LBRACE
+            && !(self.tokens.peek_token().token_type == TokenType::COMMA && depth == 0)
+            && depth >= 0
         {
             let token = self.tokens.read_token();
 
@@ -785,6 +795,17 @@ impl Parser {
             } else {
                 left_expression
             };
+
+            if self.tokens.peek_token().token_type == TokenType::LPAREN {
+                depth += 1;
+            } else if self.tokens.peek_token().token_type == TokenType::RPAREN {
+                depth -= 1;
+            }
+        }
+
+        // TODO refactor
+        if depth < 0 {
+            self.tokens.read_token();
         }
 
         left_expression
@@ -1026,11 +1047,13 @@ impl Parser {
 
             arguments.push(argument);
 
-            let comma = self.tokens.read_token();
+            let comma = self.tokens.cur_token();
 
             if comma.token_type == TokenType::RPAREN {
                 break;
             }
+
+            let comma = self.tokens.read_token();
 
             if comma.token_type != TokenType::COMMA {
                 panic!("argument should join with , but got {:?}", comma);
