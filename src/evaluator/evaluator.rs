@@ -35,7 +35,7 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
                 let arguments = {
                     let mut res: Vec<String> = vec![];
                     for argument in function_declaration_statement.arguments {
-                        res.push(argument.value);
+                        res.push(argument.value.clone());
                     }
                     res
                 };
@@ -157,10 +157,14 @@ pub fn handle_expression(expression: Box<Expression>, environment: &mut Environm
                     call
                 ),
             };
+            let call = call.clone();
             let mut environment_with_args = environment.extend();
             for idx in 0..(call.arguments.len()) {
-                // TODO valueがidentifier限定になってる(ASTレベルで)
-                let value = environment.get(call_expression.arguments[idx].value.clone());
+                let value = handle_expression(
+                    Box::new(call_expression.arguments[idx].clone()),
+                    environment,
+                );
+                let value = VariableValue::Object(value);
                 environment_with_args.set(call.arguments[idx].clone(), value.clone());
             }
 
@@ -565,6 +569,22 @@ mod tests {
         let mut environment = Environment::new();
         let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "2.5".to_string());
+
+        let src: String = String::from(
+            "fn add(left, right) {
+            left + right;
+        };
+        
+        add(2, 3) * 4;",
+        );
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "20".to_string());
     }
 
     #[test]
@@ -613,5 +633,21 @@ fn add(left, right) {
         let node = Node::Program(parser.program);
         let result = evaluate(node, &mut environment);
         assert_eq!(result.inspect(), "15".to_string());
+        let src: String = String::from("add(3, 4);");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "7".to_string());
+        let src: String = String::from("add(3 * 4, ten);");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let result = evaluate(node, &mut environment);
+        assert_eq!(result.inspect(), "22".to_string());
     }
 }

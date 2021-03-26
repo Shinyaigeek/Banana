@@ -144,15 +144,15 @@ impl Identifier {
 #[derive(Debug, PartialEq, Clone)]
 pub struct CallExpression {
     pub callee: Identifier,
-    pub arguments: Vec<Identifier>,
+    pub arguments: Vec<Expression>,
 }
 
 impl CallExpression {
     pub fn print(&self) -> String {
         let mut arguments = String::from("");
         for arg in &self.arguments {
-            let arg = &arg.print();
-            arguments.push_str(arg);
+            let arg = Expression::print(&arg);
+            arguments.push_str(&arg);
             arguments.push_str(", ");
         }
         format!("{}({})", self.callee.print(), arguments)
@@ -485,6 +485,8 @@ impl Parser {
 
     fn is_expression(token: &Token) -> bool {
         Parser::is_literal(&token)
+            || Parser::is_identifier(&token)
+            || Parser::is_prefix_operator(&token)
     }
 
     fn is_literal(token: &Token) -> bool {
@@ -752,6 +754,12 @@ impl Parser {
             self.tokens.cur_token()
         };
 
+        let mut depth = if token.token_type == TokenType::LPAREN {
+            1
+        } else {
+            0
+        };
+
         let mut left_expression = if Parser::is_literal(&token) {
             self.parse_literal()
         } else if Parser::is_identifier(&token) {
@@ -771,6 +779,8 @@ impl Parser {
             && !Parser::is_left_precedencer(precedence, self.peek_precedence())
             && self.tokens.peek_token().token_type != TokenType::EOF
             && self.tokens.peek_token().token_type != TokenType::LBRACE
+            && !(self.tokens.peek_token().token_type == TokenType::COMMA && depth == 0)
+            && depth >= 0
         {
             let token = self.tokens.read_token();
 
@@ -785,6 +795,17 @@ impl Parser {
             } else {
                 left_expression
             };
+
+            if self.tokens.peek_token().token_type == TokenType::LPAREN {
+                depth += 1;
+            } else if self.tokens.peek_token().token_type == TokenType::RPAREN {
+                depth -= 1;
+            }
+        }
+
+        // TODO refactor
+        if depth < 0 {
+            self.tokens.read_token();
         }
 
         left_expression
@@ -957,7 +978,7 @@ impl Parser {
             );
         }
 
-        let arguments = self.parse_function_arguments();
+        let arguments = self.parse_function_declaration_arguments();
 
         self.tokens.read_token();
 
@@ -970,7 +991,7 @@ impl Parser {
         })
     }
 
-    fn parse_function_arguments(&mut self) -> Vec<Identifier> {
+    fn parse_function_declaration_arguments(&mut self) -> Vec<Identifier> {
         self.tokens.read_token();
         let mut arguments: Vec<Identifier> = vec![];
 
@@ -997,6 +1018,42 @@ impl Parser {
             if comma.token_type == TokenType::RPAREN {
                 break;
             }
+
+            if comma.token_type != TokenType::COMMA {
+                panic!("argument should join with , but got {:?}", comma);
+            }
+        }
+
+        arguments
+    }
+
+    fn parse_function_arguments(&mut self) -> Vec<Expression> {
+        self.tokens.read_token();
+        let mut arguments: Vec<Expression> = vec![];
+
+        if self.tokens.peek_token().token_type == TokenType::RPAREN {
+            self.tokens.read_token();
+            return arguments;
+        }
+
+        loop {
+            let argument = self.tokens.read_token();
+
+            if !Parser::is_expression(argument) {
+                panic!("argument should be expression, but got {:?}", argument);
+            }
+
+            let argument = self.parse_expression(Precedence::LOWEST);
+
+            arguments.push(argument);
+
+            let comma = self.tokens.cur_token();
+
+            if comma.token_type == TokenType::RPAREN {
+                break;
+            }
+
+            let comma = self.tokens.read_token();
 
             if comma.token_type != TokenType::COMMA {
                 panic!("argument should join with , but got {:?}", comma);
