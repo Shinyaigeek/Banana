@@ -575,7 +575,7 @@ mod tests {
             left + right;
         };
         
-        add(2, 3) * 4;",
+        add(2, 3);",
         );
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
@@ -584,7 +584,7 @@ mod tests {
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
         let result = evaluate(node, &mut environment);
-        assert_eq!(result.inspect(), "20".to_string());
+        assert_eq!(result.inspect(), "5".to_string());
     }
 
     #[test]
