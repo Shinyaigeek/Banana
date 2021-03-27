@@ -181,7 +181,7 @@ impl VariableDeclaration {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
-    arguments: Expression,
+    pub arguments: Expression,
 }
 
 impl ReturnStatement {

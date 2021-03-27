@@ -17,7 +17,8 @@ fn main() {
             let mut parser = Parser::new(tokens);
             parser.parse();
             let node = Node::Program(parser.program);
-            let result = evaluate(node, &mut environment);
+            let mut break_flag = false;
+            let result = evaluate(node, &mut environment, &mut break_flag);
             println!("{:?}", result.inspect());
         },
         "",
