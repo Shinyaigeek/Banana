@@ -181,20 +181,14 @@ impl VariableDeclaration {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
-    arguments: Vec<Expression>,
+    pub arguments: Expression,
 }
 
 impl ReturnStatement {
     pub fn print(target: &ReturnStatement) -> String {
         let mut res = String::from("return ");
-        let len = target.arguments.len();
 
-        for i in 0..(len - 1) {
-            res.push_str(&Expression::print(&target.arguments[i]));
-            res.push_str(", ");
-        }
-
-        res.push_str(&Expression::print(&target.arguments[len - 1]));
+        res.push_str(&Expression::print(&target.arguments));
 
         res
     }
@@ -939,19 +933,17 @@ impl Parser {
         if return_token.token_type != TokenType::RETURN {
             panic!("handle_return_statement can only handle return");
         }
+        let token = self.tokens.read_token();
 
-        let mut arguments: Vec<Expression> = vec![];
-
-        loop {
-            let token = self.tokens.read_token();
-
-            if token.token_type == TokenType::SEMICOLON {
-                let statement = ReturnStatement { arguments };
-                return StatementType::ReturnStatement(statement);
-            } else {
-                let argument = self.parse_expression(Precedence::LOWEST);
-                arguments.push(argument);
-            }
+        if Parser::is_expression(&token) {
+            let arguments = self.parse_expression(Precedence::LOWEST);
+            let statement = ReturnStatement { arguments };
+            return StatementType::ReturnStatement(statement);
+        } else {
+            panic!(
+                "return statement's arguments should be expression, but got {:?}",
+                token
+            );
         }
     }
 
@@ -1276,15 +1268,15 @@ hoge:1,
                 },
                 Statement {
                     statement: StatementType::ReturnStatement(ReturnStatement {
-                        arguments: vec![Expression::Literal(Literal::Integer(Integer {
+                        arguments: Expression::Literal(Literal::Integer(Integer {
                             value: String::from("5"),
                             literal_type: LiteralType::INT,
-                        }))],
+                        })),
                     }),
                 },
                 Statement {
                     statement: StatementType::ReturnStatement(ReturnStatement {
-                        arguments: vec![Expression::InfixExpression(InfixExpression {
+                        arguments: Expression::InfixExpression(InfixExpression {
                             operator: InfixOperator::ASTERISK,
                             right: Box::new(Expression::Literal(Literal::Integer(Integer {
                                 value: "8".to_string(),
@@ -1294,7 +1286,7 @@ hoge:1,
                                 value: "2".to_string(),
                                 literal_type: LiteralType::INT,
                             }))),
-                        })],
+                        }),
                     }),
                 },
             ],

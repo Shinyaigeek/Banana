@@ -7,7 +7,7 @@ use crate::parser::parser::{
 };
 use crate::parser::tokenizer::tokenizer::Tokens;
 
-pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
+pub fn evaluate(node: Node, environment: &mut Environment, break_flag: &mut bool) -> Object {
     match node {
         Node::Program(program) => evaluate_statements(program.body, environment),
         Node::Statement(statement) => match statement.statement {
@@ -47,6 +47,10 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
                 );
                 value
             }
+            StatementType::ReturnStatement(return_statement) => {
+                *break_flag = true;
+                return handle_expression(Box::new(return_statement.arguments), environment);
+            }
             _ => panic!("{:?}", statement),
         },
         Node::Expression(expression) => handle_expression(Box::new(expression), environment),
@@ -56,8 +60,16 @@ pub fn evaluate(node: Node, environment: &mut Environment) -> Object {
 
 pub fn evaluate_statements(statements: Vec<Statement>, environment: &mut Environment) -> Object {
     let mut result: Option<Object> = None;
+    let mut break_flag = false;
     for statement in statements {
-        result = Some(evaluate(statement_to_node(statement), environment));
+        result = Some(evaluate(
+            statement_to_node(statement),
+            environment,
+            &mut break_flag,
+        ));
+        if break_flag {
+            break;
+        }
     }
     match result {
         Some(result) => result,
@@ -442,7 +454,8 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "5".to_string());
     }
 
@@ -455,7 +468,8 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "false".to_string());
     }
 
@@ -468,7 +482,8 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "-5".to_string());
     }
 
@@ -481,7 +496,8 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "-1.25".to_string());
     }
 
@@ -494,7 +510,8 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "11".to_string());
 
         let src: String = String::from("5 * 6;");
@@ -504,7 +521,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "30".to_string());
 
         let src: String = String::from("5 - 6;");
@@ -514,7 +533,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "-1".to_string());
 
         let src: String = String::from("6 / 2;");
@@ -524,7 +545,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "3".to_string());
     }
 
@@ -537,7 +560,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "31".to_string());
 
         let src: String = String::from("5 + 6.2;");
@@ -547,7 +572,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "11.2".to_string());
 
         let src: String = String::from("5 == 5.0;");
@@ -557,7 +584,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "true".to_string());
 
         let src: String = String::from("5 / 2;");
@@ -567,7 +596,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "2.5".to_string());
 
         let src: String = String::from(
@@ -575,7 +606,7 @@ mod tests {
             left + right;
         };
         
-        add(2, 3) * 4;",
+        add(2, 3);",
         );
         let mut lexer = Lexer::new(&src);
         let mut tokens = Tokens::new(lexer);
@@ -583,8 +614,10 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
-        assert_eq!(result.inspect(), "20".to_string());
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
+        assert_eq!(result.inspect(), "5".to_string());
     }
 
     #[test]
@@ -596,7 +629,9 @@ mod tests {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "5.5".to_string());
         let src: String = String::from("five;");
         let mut lexer = Lexer::new(&src);
@@ -604,7 +639,9 @@ mod tests {
         let mut parser = Parser::new(tokens);
         parser.parse();
         let node = Node::Program(parser.program);
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "5.5".to_string());
     }
 
@@ -623,7 +660,9 @@ fn add(left, right) {
         parser.parse();
         let node = Node::Program(parser.program);
         let mut environment = Environment::new();
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "[object object]".to_string());
         let src: String = String::from("add(five, ten);");
         let mut lexer = Lexer::new(&src);
@@ -631,7 +670,9 @@ fn add(left, right) {
         let mut parser = Parser::new(tokens);
         parser.parse();
         let node = Node::Program(parser.program);
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "15".to_string());
         let src: String = String::from("add(3, 4);");
         let mut lexer = Lexer::new(&src);
@@ -639,7 +680,9 @@ fn add(left, right) {
         let mut parser = Parser::new(tokens);
         parser.parse();
         let node = Node::Program(parser.program);
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "7".to_string());
         let src: String = String::from("add(3 * 4, ten);");
         let mut lexer = Lexer::new(&src);
@@ -647,7 +690,28 @@ fn add(left, right) {
         let mut parser = Parser::new(tokens);
         parser.parse();
         let node = Node::Program(parser.program);
-        let result = evaluate(node, &mut environment);
+
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
         assert_eq!(result.inspect(), "22".to_string());
+    }
+
+    #[test]
+    fn evaluate_return_statement_works() {
+        let src: String = String::from("fn add(l, r) {
+            return l + r;
+            l - r;
+        };
+        
+        add(3, 2);");
+        let mut lexer = Lexer::new(&src);
+        let mut tokens = Tokens::new(lexer);
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        let node = Node::Program(parser.program);
+        let mut environment = Environment::new();
+        let mut break_flag = false;
+        let result = evaluate(node, &mut environment, &mut break_flag);
+        assert_eq!(result.inspect(), "5".to_string());
     }
 }
